@@ -1,0 +1,17 @@
+[project]
+name = "container-code-runner"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10.11"
+dependencies = [
+    "docker>=7.1.0",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+]
+
+[dependency-groups]
+dev = [
+    "pydoclint>=0.8.3",
+    "ty>=0.0.7",
+]

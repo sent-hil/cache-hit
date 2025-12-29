@@ -3,8 +3,6 @@ import { useState } from 'react';
 const mockCard = {
   title: "Slice Reversal",
   description: "Reverse a list in Python using slicing syntax. Write a single line of code that reverses the given list without using any built-in reverse methods.",
-  language: "Python",
-  difficulty: "Medium",
   contextCode: "my_list = [1, 2, 3, 4, 5]\n# Expected Output: [5, 4, 3, 2, 1]",
   hint: "Remember that slice notation takes three arguments: [start:stop:step]. A negative step value can be used to reverse the sequence. Think about what happens when you use [::-1].",
 };
@@ -15,17 +13,8 @@ export const QuestionPane = () => {
   return (
     <div className="h-full bg-surface-dark border-r border-border overflow-y-auto custom-scrollbar">
       <div className="p-6 space-y-6">
-        {/* Title */}
         <div>
           <h2 className="text-2xl font-bold text-white mb-2">{mockCard.title}</h2>
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
-              {mockCard.language}
-            </span>
-            <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
-              {mockCard.difficulty}
-            </span>
-          </div>
         </div>
 
         {/* Description */}

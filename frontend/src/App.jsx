@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Sidebar } from './components/Sidebar';
 import { QuestionPane } from './components/QuestionPane';
 import { EditorOutputPane } from './components/EditorOutputPane';
 import { Footer } from './components/Footer';
@@ -40,21 +39,13 @@ function App() {
 
   return (
     <div className="flex h-screen bg-background-dark">
-      {/* Sidebar */}
-      <Sidebar />
-
-      {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
         <header className="h-16 border-b border-border bg-surface-darker flex items-center justify-between px-6 shrink-0">
           <div className="flex flex-col">
             <div className="flex items-center gap-3">
               <h1 className="text-lg font-bold leading-tight text-white">
-                Review: Python Data Structures
+                Review: Python
               </h1>
-              <span className="px-2 py-0.5 rounded text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                LEARNING
-              </span>
             </div>
             <div className="flex items-center gap-2 text-xs text-text-muted mt-0.5">
               <span>Spaced Repetition</span>
@@ -65,9 +56,6 @@ function App() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button className="px-4 py-2 rounded-lg text-sm font-medium text-text-muted hover:text-white hover:bg-surface-dark transition-colors">
-              End Session
-            </button>
             <RunButton
               onClick={() => handleRun()}
               isRunning={isRunning}
@@ -76,14 +64,12 @@ function App() {
           </div>
         </header>
 
-        {/* Backend Status Banner */}
         <BackendStatus
           available={backendAvailable}
           checking={checking}
           onRetry={checkHealth}
         />
 
-        {/* Split Layout: Question Pane | Editor + Output */}
         <div className="flex-1 min-h-0">
           <SplitPane direction="horizontal">
             {[
@@ -101,7 +87,6 @@ function App() {
           </SplitPane>
         </div>
 
-        {/* Footer */}
         <Footer />
       </main>
     </div>

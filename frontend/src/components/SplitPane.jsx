@@ -3,11 +3,12 @@ import { useState, useRef, useEffect } from 'react';
 export const SplitPane = ({
   children,
   direction = 'vertical', // 'vertical' (top/bottom) or 'horizontal' (left/right)
+  initialPosition = 50, // Initial split position percentage
   // Legacy props for backward compatibility
   topChildren,
   bottomChildren,
 }) => {
-  const [splitPosition, setSplitPosition] = useState(50); // Percentage
+  const [splitPosition, setSplitPosition] = useState(initialPosition); // Percentage
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
 

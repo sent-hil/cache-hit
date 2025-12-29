@@ -1,32 +1,27 @@
 export const Footer = () => {
   return (
-    <footer className="h-16 border-t border-border bg-surface-darker flex items-center justify-between px-6 shrink-0">
-      {/* Keyboard Shortcuts */}
-      <div className="flex items-center gap-6 text-text-muted text-sm">
-        <div className="flex items-center gap-2">
-          <kbd className="px-2 py-1 bg-surface-dark border border-border-light rounded text-xs font-mono">
-            ⌘ Enter
-          </kbd>
-          <span>Run Code</span>
+    <footer className="h-14 border-t border-border bg-surface-panel shrink-0 z-20">
+      <div className="h-full px-6 flex items-center justify-between">
+        {/* Keyboard Shortcuts */}
+        <div className="flex items-center gap-6 text-[10px] font-bold text-content-muted uppercase tracking-widest hidden sm:flex">
+          <div className="flex items-center gap-2">
+            <kbd className="h-5 flex items-center justify-center min-w-[20px] rounded-sm bg-surface-subtle border border-border px-1 font-mono text-content">
+              ⌘ ↵
+            </kbd>
+            <span>Run</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <kbd className="px-2 py-1 bg-surface-dark border border-border-light rounded text-xs font-mono">
-            Space
-          </kbd>
-          <span>Show Answer</span>
-        </div>
-      </div>
 
-      {/* Action Buttons */}
-      <div className="flex items-center gap-3">
-        <button className="px-4 py-2 rounded-lg text-sm font-medium text-text-muted hover:text-white hover:bg-surface-dark transition-colors flex items-center gap-2">
-          <span className="material-symbols-outlined text-lg">skip_next</span>
-          Skip Card
-        </button>
-        <button className="px-5 py-2 rounded-lg text-sm font-semibold bg-primary hover:bg-primary/90 text-white transition-colors flex items-center gap-2 shadow-lg shadow-primary/20">
-          <span className="material-symbols-outlined text-lg">visibility</span>
-          Show Answer
-        </button>
+        {/* Action Buttons */}
+        <div className="flex items-center gap-3 ml-auto sm:ml-0 w-full sm:w-auto justify-end">
+          <button className="px-4 py-2 text-xs font-bold text-content-muted hover:text-content border border-transparent hover:border-border transition-colors uppercase tracking-wider">
+            Skip Card
+          </button>
+          <button className="group relative px-6 py-2 bg-primary hover:bg-[#4b96ef] text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 border border-primary hover:border-[#8ec2ff] shadow-sm">
+            <span className="material-symbols-outlined text-[16px]">visibility</span>
+            Show Answer
+          </button>
+        </div>
       </div>
     </footer>
   );

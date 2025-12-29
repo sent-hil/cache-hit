@@ -3,7 +3,6 @@ import { QuestionPane } from './components/QuestionPane';
 import { EditorOutputPane } from './components/EditorOutputPane';
 import { Footer } from './components/Footer';
 import { SplitPane } from './components/SplitPane';
-import { RunButton } from './components/RunButton';
 import { BackendStatus } from './components/BackendStatus';
 import { useBackendHealth } from './hooks/useBackendHealth';
 import { useCodeExecution } from './hooks/useCodeExecution';
@@ -38,57 +37,66 @@ function App() {
   };
 
   return (
-    <div className="flex h-screen bg-background-dark">
-      <main className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 border-b border-border bg-surface-darker flex items-center justify-between px-6 shrink-0">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-3">
-              <h1 className="text-lg font-bold leading-tight text-white">
-                Review: Python
-              </h1>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-text-muted mt-0.5">
-              <span>Spaced Repetition</span>
-              <span>•</span>
-              <span>Daily Mix</span>
-              <span>•</span>
-              <span className="font-medium">Card 12 of 50</span>
-            </div>
+    <div className="flex flex-col h-screen bg-surface">
+      {/* Header */}
+      <header className="h-12 border-b border-border bg-surface-panel flex items-center justify-between px-4 shrink-0 z-20">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-primary font-bold tracking-tight">
+            <span className="material-symbols-outlined text-[20px]">terminal</span>
+            <span>DevRep</span>
           </div>
-          <div className="flex items-center gap-3">
-            <RunButton
-              onClick={() => handleRun()}
-              isRunning={isRunning}
-              disabled={!backendAvailable}
-            />
+          <span className="text-border">/</span>
+          <div className="flex items-center gap-2 text-sm text-content-muted">
+            <span>decks</span>
+            <span className="text-border">/</span>
+            <span className="text-content">python</span>
           </div>
-        </header>
-
-        <BackendStatus
-          available={backendAvailable}
-          checking={checking}
-          onRetry={checkHealth}
-        />
-
-        <div className="flex-1 min-h-0">
-          <SplitPane direction="horizontal">
-            {[
-              <QuestionPane key="question" />,
-              <EditorOutputPane
-                key="editor-output"
-                code={code}
-                onCodeChange={handleCodeChange}
-                onRun={handleRun}
-                output={output}
-                isRunning={isRunning}
-                elapsedMs={elapsedMs}
-              />,
-            ]}
-          </SplitPane>
         </div>
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3 font-mono text-xs">
+            <span className="text-content-muted">PROGRESS</span>
+            <div className="flex items-center gap-1">
+              <span className="text-primary font-bold">12</span>
+              <span className="text-content-muted">/</span>
+              <span>50</span>
+            </div>
+            <div className="hidden md:flex text-content-muted tracking-tighter">
+              <span className="text-primary">||||||||||</span>
+              <span>....................</span>
+            </div>
+          </div>
+          <div className="h-4 w-px bg-border mx-2"></div>
+        </div>
+      </header>
 
-        <Footer />
+      {/* Backend Status Banner */}
+      <BackendStatus
+        available={backendAvailable}
+        checking={checking}
+        onRetry={checkHealth}
+      />
+
+      {/* Main Split Layout */}
+      <main className="flex-1 flex min-w-0 min-h-0 relative">
+        <SplitPane direction="horizontal">
+          {[
+            <QuestionPane key="question" />,
+            <EditorOutputPane
+              key="editor-output"
+              code={code}
+              onCodeChange={handleCodeChange}
+              onRun={handleRun}
+              output={output}
+              isRunning={isRunning}
+              elapsedMs={elapsedMs}
+              backendAvailable={backendAvailable}
+            />,
+          ]}
+        </SplitPane>
       </main>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

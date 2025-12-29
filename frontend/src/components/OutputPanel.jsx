@@ -19,84 +19,79 @@ export const OutputPanel = ({ output, isRunning, elapsedMs }) => {
   const renderOutput = () => {
     if (isRunning && !output) {
       return (
-        <div className="text-text-muted flex items-center gap-2">
-          <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          Running... {formatTime(elapsedMs)}
-        </div>
+        <>
+          <div className="flex gap-2">
+            <span className="text-secondary">➜</span>
+            <span className="text-primary">~</span>
+            <span>python3 solution.py</span>
+          </div>
+          <div className="mt-2 text-content pl-4 border-l border-border">
+            Running... {formatTime(elapsedMs)}
+          </div>
+          <span className="animate-pulse inline-block w-2 h-4 bg-content-muted align-middle mt-2"></span>
+        </>
       );
     }
 
     if (!output) {
-      return <div className="text-text-muted">Output will appear here...</div>;
+      return (
+        <>
+          <div className="flex gap-2">
+            <span className="text-secondary">➜</span>
+            <span className="text-primary">~</span>
+            <span>python3 solution.py</span>
+          </div>
+          <div className="mt-2 text-content pl-4 border-l border-border">
+            Waiting for input...
+          </div>
+          <span className="animate-pulse inline-block w-2 h-4 bg-content-muted align-middle mt-2"></span>
+        </>
+      );
     }
 
     const combined = (output.stdout || '') + (output.stderr || '');
 
-    console.log('OutputPanel render:', {
-      stdout: output.stdout,
-      stderr: output.stderr,
-      combined,
-      combinedLength: combined.length
-    });
-
-    if (!combined.trim()) {
-      return <div className="text-text-muted italic">(no output)</div>;
-    }
-
-    const html = parseAnsi(combined);
-    console.log('Parsed HTML:', html);
-
     return (
-      <div
-        className="text-[#e6edf3]"
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
+      <>
+        <div className="flex gap-2">
+          <span className="text-secondary">➜</span>
+          <span className="text-primary">~</span>
+          <span>python3 solution.py</span>
+        </div>
+        <div className="mt-2 text-content pl-4 border-l border-border whitespace-pre-wrap">
+          {combined.trim() || '(no output)'}
+          {output.exit_code !== 0 && (
+            <div className="mt-2 text-red-400">Exit code: {output.exit_code}</div>
+          )}
+          <div className="mt-2 text-content-muted text-[10px]">
+            Completed in {output.execution_time_ms?.toFixed(1)}ms
+          </div>
+        </div>
+      </>
     );
   };
 
-  const renderMetrics = () => {
-    if (!output) return null;
-
-    return (
-      <div className="flex items-center gap-6 px-4 py-3 bg-surface-darker border-t border-border text-sm font-mono">
-        <div className="flex items-center gap-2">
-          <span className="text-text-muted">⏱️</span>
-          <span className="text-white">{output.execution_time_ms?.toFixed(1) || '--'}ms</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-text-muted">💾</span>
-          <span className="text-white">{output.memory_used_mb?.toFixed(1) || '--'}MB</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-text-muted">⚡</span>
-          <span className="text-white">{output.cpu_percent?.toFixed(1) || '--'}%</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-text-muted">Exit:</span>
-          <span className="text-white">{output.exit_code ?? '--'}</span>
-        </div>
-        <div className="flex items-center gap-2 ml-auto text-xs" title={output.file_path}>
-          <span className="text-text-muted">📄</span>
-          <span className="text-text-muted truncate max-w-xs">
-            {output.file_path || 'N/A'}
-          </span>
-        </div>
-      </div>
-    );
-  };
 
   return (
-    <div className="h-full flex flex-col bg-terminal-bg">
+    <div className="h-full border-t border-border bg-surface-panel flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between px-3 py-1.5 bg-surface-subtle border-b border-border">
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-[14px] text-content-muted">terminal</span>
+          <span className="text-[10px] font-bold text-content-muted uppercase tracking-wider">
+            Console Output
+          </span>
+        </div>
+        <button className="text-[10px] text-content-muted hover:text-white uppercase">Clear</button>
+      </div>
+
+      {/* Output Content */}
       <div
         ref={outputRef}
-        className="flex-1 overflow-auto custom-scrollbar output-content"
+        className="p-4 font-mono text-xs text-content-muted overflow-y-auto flex-1 font-medium"
       >
         {renderOutput()}
       </div>
-      {renderMetrics()}
     </div>
   );
 };

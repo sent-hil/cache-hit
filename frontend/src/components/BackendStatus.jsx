@@ -20,7 +20,7 @@ export const BackendStatus = ({ available, checking, onRetry }) => {
         </svg>
         <div className="flex-1">
           <p className="text-white font-medium text-sm">Backend Unavailable</p>
-          <p className="text-text-muted text-xs mt-0.5">
+          <p className="text-content-muted text-xs mt-0.5">
             Make sure the backend server is running on port 8000
           </p>
         </div>

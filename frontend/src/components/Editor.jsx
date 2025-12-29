@@ -4,7 +4,7 @@ import Editor from '@monaco-editor/react';
 const INITIAL_CODE = `# Write your Python code here and press Cmd+Enter to run
 `;
 
-export const CodeEditor = ({ value, onChange, onRun }) => {
+export const CodeEditor = ({ value, onChange, onRun, backendAvailable }) => {
   const editorRef = useRef(null);
 
   const handleEditorDidMount = (editor, monaco) => {
@@ -53,8 +53,15 @@ export const CodeEditor = ({ value, onChange, onRun }) => {
     });
   };
 
+  const handleRunClick = () => {
+    if (onRun && editorRef.current) {
+      const currentCode = editorRef.current.getValue();
+      onRun(currentCode);
+    }
+  };
+
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full relative group">
       <Editor
         height="100%"
         defaultLanguage="python"
@@ -79,11 +86,22 @@ export const CodeEditor = ({ value, onChange, onRun }) => {
           scrollbar: {
             vertical: 'visible',
             horizontal: 'visible',
-            verticalScrollbarSize: 8,
-            horizontalScrollbarSize: 8,
+            verticalScrollbarSize: 10,
+            horizontalScrollbarSize: 10,
           },
         }}
       />
+      {/* Floating Run Button */}
+      <div className="absolute top-4 right-4 opacity-100 transition-opacity">
+        <button
+          onClick={handleRunClick}
+          disabled={!backendAvailable}
+          className="flex items-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/40 hover:border-primary px-3 py-1.5 shadow-glow transition-all active:translate-y-[1px] disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <span className="material-symbols-outlined text-[16px]">play_arrow</span>
+          <span className="text-xs font-bold uppercase tracking-wider">Run</span>
+        </button>
+      </div>
     </div>
   );
 };

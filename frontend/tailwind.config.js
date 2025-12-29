@@ -8,19 +8,35 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#137fec',
-        'background-light': '#f6f7f8',
-        'background-dark': '#101922',
-        'surface-dark': '#192633',
-        'surface-darker': '#111a22',
-        'terminal-bg': '#0d1117',
-        border: '#233648',
-        'border-light': '#324d67',
-        'text-muted': '#92adc9',
+        primary: '#58a6ff',
+        secondary: '#238636',
+        accent: '#d29922',
+        surface: {
+          DEFAULT: '#0d1117',
+          panel: '#161b22',
+          subtle: '#21262d',
+        },
+        border: {
+          DEFAULT: '#30363d',
+        },
+        content: {
+          DEFAULT: '#c9d1d9',
+          muted: '#8b949e',
+        },
       },
       fontFamily: {
         display: ['Space Grotesk', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
+      },
+      borderRadius: {
+        DEFAULT: '0px',
+        sm: '2px',
+        md: '4px',
+        lg: '4px',
+        full: '9999px',
+      },
+      boxShadow: {
+        glow: '0 0 10px rgba(88, 166, 255, 0.1)',
       },
     },
   },

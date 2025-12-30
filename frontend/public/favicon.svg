@@ -1,0 +1,14 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background rounded square -->
+  <rect width="32" height="32" rx="6" fill="#58a6ff"/>
+
+  <!-- Terminal icon (matching Material Symbols terminal) -->
+  <!-- Terminal window border -->
+  <rect x="6" y="8" width="20" height="16" rx="2" stroke="white" stroke-width="1.5" fill="none"/>
+
+  <!-- Terminal prompt arrow -->
+  <path d="M9 13L11.5 16L9 19" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Terminal cursor line -->
+  <line x1="14" y1="16" x2="18" y2="16" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

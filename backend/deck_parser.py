@@ -24,18 +24,18 @@ class Deck(BaseModel):
 
 def extract_code_blocks(text: str) -> str:
     """Extract code from triple-backtick blocks."""
-    code_match = re.search(r'```(?:\w+)?\s*\n(.*?)\n```', text, re.DOTALL)
+    code_match = re.search(r"```(?:\w+)?\s*\n(.*?)\n```", text, re.DOTALL)
     return code_match.group(1).strip() if code_match else ""
 
 
 def parse_markdown_file(content: str, filename: str) -> Card:
     """Parse a markdown file into a Card with sections."""
-    parts = content.split('\n---\n')
+    parts = content.split("\n---\n")
 
     if not parts:
         return Card(id=filename, title="Untitled", sections=[])
 
-    title = parts[0].strip().split('\n')[0]
+    title = parts[0].strip().split("\n")[0]
 
     sections = []
     i = 0
@@ -46,15 +46,12 @@ def parse_markdown_file(content: str, filename: str) -> Card:
             answer_text = parts[i + 1].strip()
             answer_code = extract_code_blocks(answer_text)
 
-            sections.append(Section(
-                question=question_text,
-                answer_code=answer_code
-            ))
+            sections.append(Section(question=question_text, answer_code=answer_code))
             i += 2
         else:
             i += 1
 
-    card_id = filename.replace('.md', '')
+    card_id = filename.replace(".md", "")
 
     return Card(id=card_id, title=title, sections=sections)
 
@@ -67,7 +64,7 @@ def parse_deck_folder(folder_path: str) -> Deck:
         raise ValueError(f"Invalid folder path: {folder_path}")
 
     folder_name = folder.name
-    match = re.match(r'^([A-Za-z0-9]+)\s*-\s*(.+)$', folder_name)
+    match = re.match(r"^([A-Za-z0-9]+)\s*-\s*(.+)$", folder_name)
 
     if match:
         deck_id = match.group(1)
@@ -77,18 +74,13 @@ def parse_deck_folder(folder_path: str) -> Deck:
         deck_name = folder_name
 
     cards = []
-    for file_path in sorted(folder.glob('*.md')):
+    for file_path in sorted(folder.glob("*.md")):
         try:
-            content = file_path.read_text(encoding='utf-8')
+            content = file_path.read_text(encoding="utf-8")
             card = parse_markdown_file(content, file_path.name)
             cards.append(card)
         except Exception as e:
             print(f"Error parsing {file_path.name}: {e}")
             continue
 
-    return Deck(
-        id=deck_id,
-        name=deck_name,
-        total_cards=len(cards),
-        cards=cards
-    )
+    return Deck(id=deck_id, name=deck_name, total_cards=len(cards), cards=cards)

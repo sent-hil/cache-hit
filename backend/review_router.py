@@ -54,7 +54,7 @@ def get_review_storage() -> ReviewStorage:
 async def submit_review(
     req: ReviewRequest,
     scheduler: FSRSScheduler = Depends(get_fsrs_scheduler),
-    storage: ReviewStorage = Depends(get_review_storage)
+    storage: ReviewStorage = Depends(get_review_storage),
 ):
     logger.info(
         f"Review submitted: user={req.user_id}, deck={req.deck_id}, card={req.card_id}, section={req.section_index}, rating={req.rating}"
@@ -102,7 +102,7 @@ async def get_due_cards(
     user_id: str,
     deck_id: str,
     cache: Dict[str, Deck] = Depends(get_deck_cache),
-    storage: ReviewStorage = Depends(get_review_storage)
+    storage: ReviewStorage = Depends(get_review_storage),
 ):
     logger.info(f"Getting due cards: user={user_id}, deck={deck_id}")
 
@@ -143,11 +143,18 @@ async def get_due_cards(
                     for state in due_states:
                         card_id = state["card_id"]
                         if card_id not in cards_map:
-                            card = next((c for c in deck.cards if c.id == card_id), None)
+                            card = next(
+                                (c for c in deck.cards if c.id == card_id), None
+                            )
                             if not card:
-                                logger.warning(f"Card {card_id} not found in deck {actual_deck_id}")
+                                logger.warning(
+                                    f"Card {card_id} not found in deck {actual_deck_id}"
+                                )
                                 continue
-                            cards_map[card_id] = {"card": card.model_dump(), "due_sections": []}
+                            cards_map[card_id] = {
+                                "card": card.model_dump(),
+                                "due_sections": [],
+                            }
 
                         cards_map[card_id]["due_sections"].append(
                             {
@@ -238,8 +245,7 @@ async def get_due_cards(
 
 @router.post("/review/reset", response_model=ResetResponse)
 async def reset_reviews(
-    req: ResetRequest,
-    storage: ReviewStorage = Depends(get_review_storage)
+    req: ResetRequest, storage: ReviewStorage = Depends(get_review_storage)
 ):
     logger.info(f"Resetting reviews: user={req.user_id}, deck={req.deck_id}")
 
@@ -247,7 +253,4 @@ async def reset_reviews(
 
     logger.info(f"Reset {cards_reset} cards for user {req.user_id}, deck {req.deck_id}")
 
-    return ResetResponse(
-        success=True,
-        cards_reset=cards_reset
-    )
+    return ResetResponse(success=True, cards_reset=cards_reset)

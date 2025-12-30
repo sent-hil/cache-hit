@@ -28,10 +28,7 @@ numbers = [1, 2, 3, 4, 5]
 total = sum(numbers)
 print(f"Sum: {total}")
 """
-    response = requests.post(
-        f"{BASE_URL}/execute/python",
-        json={"code": code}
-    )
+    response = requests.post(f"{BASE_URL}/execute/python", json={"code": code})
     print(f"Status: {response.status_code}")
     result = response.json()
     print(f"Output:\n{result['stdout']}")
@@ -49,10 +46,7 @@ array = [1, 2, 3, 4, 5]
 total = array.sum
 puts "Sum: #{total}"
 """
-    response = requests.post(
-        f"{BASE_URL}/execute/ruby",
-        json={"code": code}
-    )
+    response = requests.post(f"{BASE_URL}/execute/ruby", json={"code": code})
     print(f"Status: {response.status_code}")
     result = response.json()
     print(f"Output:\n{result['stdout']}")
@@ -69,10 +63,7 @@ print("Before error")
 raise ValueError("Test error")
 print("After error - should not print")
 """
-    response = requests.post(
-        f"{BASE_URL}/execute/python",
-        json={"code": code}
-    )
+    response = requests.post(f"{BASE_URL}/execute/python", json={"code": code})
     print(f"Status: {response.status_code}")
     result = response.json()
     print(f"Stdout:\n{result['stdout']}")

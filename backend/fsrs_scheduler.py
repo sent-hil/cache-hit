@@ -65,6 +65,7 @@ class FSRSScheduler:
         # Map our state to FSRS State enum
         # Import State enum
         from fsrs import State
+
         state_map = {
             "new": State.Learning,  # New cards start in Learning state
             "learning": State.Learning,
@@ -79,6 +80,7 @@ class FSRSScheduler:
         """Convert py-fsrs Card back to our format."""
         # Map FSRS State enum back to our state strings
         from fsrs import State
+
         state_map = {
             State.Learning: "learning",
             State.Review: "review",

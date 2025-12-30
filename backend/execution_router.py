@@ -41,8 +41,7 @@ def get_container_manager() -> ContainerManager:
 
 @router.post("/execute/python", response_model=ExecuteResponse)
 async def execute_python(
-    request: ExecuteRequest,
-    manager: ContainerManager = Depends(get_container_manager)
+    request: ExecuteRequest, manager: ContainerManager = Depends(get_container_manager)
 ):
     logger.info("Received Python execution request")
     return manager.execute_code("python", request.code)
@@ -50,8 +49,7 @@ async def execute_python(
 
 @router.post("/execute/ruby", response_model=ExecuteResponse)
 async def execute_ruby(
-    request: ExecuteRequest,
-    manager: ContainerManager = Depends(get_container_manager)
+    request: ExecuteRequest, manager: ContainerManager = Depends(get_container_manager)
 ):
     logger.info("Received Ruby execution request")
     return manager.execute_code("ruby", request.code)

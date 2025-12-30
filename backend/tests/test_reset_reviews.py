@@ -11,6 +11,7 @@ def storage():
     storage = ReviewStorage(data_dir="test_review_data")
     yield storage
     import shutil
+
     shutil.rmtree("test_review_data", ignore_errors=True)
 
 
@@ -24,9 +25,15 @@ class TestResetReviews:
         storage.create_card_state(user_id, deck_id, "card2", 0)
 
         future_date = (datetime.now(timezone.utc) + timedelta(days=5)).isoformat()
-        storage.update_card_state(user_id, deck_id, "card1", 0, {"due_date": future_date})
-        storage.update_card_state(user_id, deck_id, "card1", 1, {"due_date": future_date})
-        storage.update_card_state(user_id, deck_id, "card2", 0, {"due_date": future_date})
+        storage.update_card_state(
+            user_id, deck_id, "card1", 0, {"due_date": future_date}
+        )
+        storage.update_card_state(
+            user_id, deck_id, "card1", 1, {"due_date": future_date}
+        )
+        storage.update_card_state(
+            user_id, deck_id, "card2", 0, {"due_date": future_date}
+        )
 
         cards_reset = storage.reset_reviews_for_today(user_id, deck_id)
 
@@ -56,7 +63,9 @@ class TestResetReviews:
         storage.create_card_state(user_id, deck_id, "card1", 0)
 
         future_date = (datetime.now(timezone.utc) + timedelta(days=5)).isoformat()
-        storage.update_card_state(user_id, deck_id, "card1", 0, {"due_date": future_date})
+        storage.update_card_state(
+            user_id, deck_id, "card1", 0, {"due_date": future_date}
+        )
 
         due_before = storage.get_due_cards(user_id, deck_id)
         assert len(due_before) == 0
@@ -73,8 +82,7 @@ class TestResetReviewsEndpoint:
         client = TestClient(app)
 
         response = client.post(
-            "/api/review/reset",
-            json={"user_id": "user1", "deck_id": "QhL3SFpO"}
+            "/api/review/reset", json={"user_id": "user1", "deck_id": "QhL3SFpO"}
         )
 
         assert response.status_code == 200
@@ -93,13 +101,12 @@ class TestResetReviewsEndpoint:
                 "deck_id": "test_deck",
                 "card_id": "card1",
                 "section_index": 0,
-                "rating": 4
-            }
+                "rating": 4,
+            },
         )
 
         response = client.post(
-            "/api/review/reset",
-            json={"user_id": "user1", "deck_id": "test_deck"}
+            "/api/review/reset", json={"user_id": "user1", "deck_id": "test_deck"}
         )
 
         assert response.status_code == 200

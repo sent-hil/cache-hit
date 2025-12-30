@@ -1,26 +1,27 @@
 # CacheHit
 
-A spaced repetition code review application with FastAPI-based code execution sandbox. Execute Python and Ruby code in isolated Docker containers to practice and review coding concepts.
-
-## Features
-
-- Execute Python and Ruby code in isolated Docker containers
-- One long-lived container per language for fast execution
-- Automatic cleanup of idle containers (30-minute timeout)
-- Rich diagnostic information (execution time, memory usage, CPU percentage)
-- CORS enabled for frontend integration
-- Concurrent execution support with UUID-based file isolation
-- Comprehensive logging for debugging
+A spaced repetition application for learning to code. Practice coding problems with FSRS algorithm, and isolated code execution in Docker containers.
 
 ## Requirements
 
+### Backend
 - Python 3.10+
 - Docker daemon running
 - uv (Python package manager)
 
+### Frontend
+- Node.js 18+
+- npm or yarn
+
 ## Installation
 
-1. Clone the repository
+### Backend Setup
+
+1. Navigate to the backend directory:
+```bash
+cd backend
+```
+
 2. Install dependencies:
 ```bash
 uv sync
@@ -31,112 +32,94 @@ uv sync
 docker ps
 ```
 
-## Usage
+### Frontend Setup
 
-### Start the Server
-
+1. Navigate to the frontend directory:
 ```bash
-uvicorn main:app --host 0.0.0.0 --port 8000
+cd frontend
 ```
 
-Or using the Python script:
+2. Install dependencies:
 ```bash
+npm install
+```
+
+## Usage
+
+### Start the Backend Server
+
+From the `backend` directory:
+
+```bash
+cd backend
+uv run uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+Or using Python directly:
+```bash
+cd backend
 python main.py
 ```
 
 The server will:
 - Check Docker availability
 - Pull required images (python:3.10-slim, ruby:3.2-slim) if needed
+- Load flashcard decks from the `data/` directory
 - Create and start containers for both languages
 - Start a background cleanup task
 - Listen on http://0.0.0.0:8000
 
-### API Endpoints
+### Start the Frontend
 
-#### Health Check
-
-```bash
-GET /health
-```
-
-Response:
-```json
-{
-  "status": "ok",
-  "containers": {
-    "python": "running",
-    "ruby": "running"
-  },
-  "uptime_seconds": 123.45
-}
-```
-
-#### Execute Python Code
+From the `frontend` directory:
 
 ```bash
-POST /execute/python
-Content-Type: application/json
-
-{
-  "code": "print('Hello, World!')"
-}
+cd frontend
+npm run dev
 ```
 
-Response:
-```json
-{
-  "stdout": "Hello, World!\n",
-  "stderr": "",
-  "exit_code": 0,
-  "execution_time_ms": 45.23,
-  "container_id": "abc123",
-  "language": "python",
-  "image_name": "python:3.10-slim",
-  "memory_used_mb": 12.34,
-  "cpu_percent": 5.67,
-  "file_path": "/tmp/exec_<uuid>.py"
-}
-```
+The app will be available at http://localhost:3000
 
-#### Execute Ruby Code
+## Testing
 
+### Backend Tests
+
+From the `backend` directory:
+
+Run all tests:
 ```bash
-POST /execute/ruby
-Content-Type: application/json
-
-{
-  "code": "puts 'Hello, World!'"
-}
+uv run pytest tests/
 ```
 
-Response format is the same as Python execution.
-
-### Testing
-
-Run the test script:
+Run tests with coverage:
 ```bash
-python test_api.py
+uv run pytest tests/ --cov=. --cov-report=term-missing
 ```
 
-Or use curl:
+### Frontend Tests
+
+From the `frontend` directory:
+
+Run all tests:
 ```bash
-# Health check
-curl http://localhost:8000/health
+npm run test
+```
 
-# Execute Python
-curl -X POST http://localhost:8000/execute/python \
-  -H "Content-Type: application/json" \
-  -d '{"code": "print(\"Hello!\")"}'
+Run tests in watch mode:
+```bash
+npm run test
+```
 
-# Execute Ruby
-curl -X POST http://localhost:8000/execute/ruby \
-  -H "Content-Type: application/json" \
-  -d '{"code": "puts \"Hello!\""}'
+Run tests with coverage:
+```bash
+npm run test:coverage
 ```
 
 ## Configuration
 
-All configuration is in `main.py`:
+### Backend Configuration
+
+Container configuration is in `backend/container_manager.py`:
 
 ```python
 LANGUAGE_CONFIG = {
@@ -151,81 +134,25 @@ LANGUAGE_CONFIG = {
         "command": ["ruby", "{filepath}"]
     }
 }
+```
 
-# Resource Limits
+Resource Limits:
 - CPU: 0.5 cores per container
 - Memory: 256MB per container
-- Execution timeout: 10 seconds (Note: not yet enforced)
+- Execution timeout: 10 seconds
 - Output limit: 10KB
 - Request size: 100KB max
 
-# Cleanup
+Cleanup:
 - Container idle timeout: 30 minutes
 - Cleanup check interval: 5 minutes
-```
 
-## Architecture
+### Frontend Configuration
 
-### Container Lifecycle
+API endpoint is in `frontend/src/utils/api.js`:
 
-1. **Startup**: Both Python and Ruby containers are pre-started when the server launches
-2. **Execution**: Code is written to `/tmp/exec_<uuid>.<ext>` and executed via `exec_run()`
-3. **Tracking**: Each execution updates the container's `last_used` timestamp
-4. **Cleanup**: Background task checks every 5 minutes for containers idle >30 minutes
-5. **Shutdown**: All containers are killed and removed when the server stops
-
-### Security
-
-- **Network isolation**: Containers run with `network_mode="none"`
-- **Resource limits**: CPU and memory caps prevent resource exhaustion
-- **No validation**: Code runs as-is (designed for trusted local use)
-- **Isolated execution**: UUID filenames prevent file collisions
-
-### Concurrency
-
-Multiple requests can execute simultaneously in the same container because each execution:
-- Uses a unique UUID-based filename
-- Runs in parallel (no locks)
-- Has independent stdout/stderr capture
-
-## Frontend Integration
-
-Example TypeScript/React code:
-
-```typescript
-async function executeCode(code: string, language: 'python' | 'ruby') {
-  const response = await fetch(`http://localhost:8000/execute/${language}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code })
-  });
-
-  const result = await response.json();
-
-  if (response.ok) {
-    console.log('Output:', result.stdout);
-    console.log('Errors:', result.stderr);
-    console.log('Time:', result.execution_time_ms, 'ms');
-  }
-
-  return result;
-}
-```
-
-## Project Structure
-
-```
-cachehit/
-├── backend/
-│   ├── main.py           # FastAPI application and container manager
-│   ├── test_api.py       # Test script for API endpoints
-│   ├── pyproject.toml    # Project dependencies
-│   └── SPEC.md          # Detailed specification
-├── frontend/
-│   ├── src/              # React application
-│   ├── public/           # Static assets
-│   └── package.json      # Frontend dependencies
-└── README.md            # This file
+```javascript
+const API_URL = 'http://localhost:8000';
 ```
 
 ## Troubleshooting
@@ -251,18 +178,40 @@ Check server logs for detailed error messages (DEBUG level enabled).
 
 ### Port Already in Use
 
-Change the port in the uvicorn command:
+Backend:
 ```bash
 uvicorn main:app --port 8001
 ```
 
-Don't forget to update CORS settings in main.py if your frontend is on a different port.
+Frontend (edit `vite.config.js`):
+```javascript
+server: {
+  port: 3001,
+  open: true,
+}
+```
+
+### Tests Failing
+
+Backend - ensure virtual environment is activated:
+```bash
+cd backend
+uv run pytest tests/ -v
+```
+
+Frontend - clear node_modules and reinstall:
+```bash
+cd frontend
+rm -rf node_modules
+npm install
+npm run test
+```
 
 ## Development
 
 ### Adding New Languages
 
-1. Add entry to `LANGUAGE_CONFIG`:
+1. Add entry to `LANGUAGE_CONFIG` in `container_manager.py`:
 ```python
 "javascript": {
     "image": "node:20-slim",
@@ -274,25 +223,37 @@ Don't forget to update CORS settings in main.py if your frontend is on a differe
 2. Restart server - containers auto-created
 3. New endpoint automatically available at `/execute/javascript`
 
-### Logging
+### Adding Tests
 
-All logging is at DEBUG level. Check server output for:
-- Container lifecycle events
-- Execution timing
-- Docker API calls
-- Cleanup operations
+Backend (pytest):
+```python
+def test_new_feature(self, client):
+    response = client.get("/api/endpoint")
+    assert response.status_code == 200
+```
 
-## Performance
+Frontend (vitest + React Testing Library):
+```javascript
+it('should render component', () => {
+  render(<Component />);
+  expect(screen.getByText('Hello')).toBeInTheDocument();
+});
+```
 
-- **Cold start**: ~5-10 seconds (pulling images + creating containers)
-- **Warm execution**: ~50-200ms overhead + code execution time
-- **Concurrent requests**: Supported, no blocking
-- **Memory usage**: ~512MB for both containers + FastAPI process
+### Code Style
+
+Backend:
+- Follow PEP 8
+- Use type hints where appropriate
+- Add docstrings for public functions
+- No inline comments in production code
+
+Frontend:
+- Use functional components with hooks
+- Prefer const over let
+- No JSX comments in production code
+- Use Tailwind CSS for styling
 
 ## License
 
 MIT
-
-## Contributing
-
-This is a personal learning project. Feel free to fork and adapt for your needs.

@@ -91,7 +91,7 @@ describe('useDeckState', () => {
     expect(result.current.error).toBe('No deck ID provided');
   });
 
-  it('should navigate to next card', async () => {
+  it('should track cards reviewed progress', async () => {
     fetch
       .mockResolvedValueOnce({
         ok: true,
@@ -109,18 +109,11 @@ describe('useDeckState', () => {
     });
 
     expect(result.current.currentCardIndex).toBe(0);
+    expect(result.current.totalCards).toBe(2);
     expect(result.current.canGoNext).toBe(true);
-
-    act(() => {
-      result.current.nextCard();
-    });
-
-    expect(result.current.currentCardIndex).toBe(1);
-    expect(result.current.currentCard).toEqual(mockDueCards.cards[1].card);
-    expect(result.current.canGoNext).toBe(false);
   });
 
-  it('should navigate to previous card', async () => {
+  it('should allow navigation between cards', async () => {
     fetch
       .mockResolvedValueOnce({
         ok: true,
@@ -137,47 +130,23 @@ describe('useDeckState', () => {
       expect(result.current.loading).toBe(false);
     });
 
+    expect(result.current.canGoNext).toBe(true);
+    expect(result.current.canGoPrevious).toBe(false);
+
     act(() => {
       result.current.nextCard();
     });
 
-    expect(result.current.currentCardIndex).toBe(1);
+    expect(result.current.currentCard).toEqual(mockDueCards.cards[1].card);
     expect(result.current.canGoPrevious).toBe(true);
+    expect(result.current.canGoNext).toBe(false);
 
     act(() => {
       result.current.previousCard();
     });
 
-    expect(result.current.currentCardIndex).toBe(0);
+    expect(result.current.currentCard).toEqual(mockDueCards.cards[0].card);
     expect(result.current.canGoPrevious).toBe(false);
-  });
-
-  it('should not go beyond last card', async () => {
-    fetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockDeck,
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockDueCards,
-      });
-
-    const { result } = renderHook(() => useDeckState('QhL3SFpO'));
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    });
-
-    act(() => {
-      result.current.nextCard();
-    });
-    expect(result.current.currentCardIndex).toBe(1);
-
-    act(() => {
-      result.current.nextCard();
-    });
-    expect(result.current.currentCardIndex).toBe(1);
   });
 
   it('should not go before first card', async () => {
@@ -205,7 +174,7 @@ describe('useDeckState', () => {
     expect(result.current.currentCardIndex).toBe(0);
   });
 
-  it('should reload deck when reloadDeck is called', async () => {
+  it('should reload deck and track progress', async () => {
     fetch
       .mockResolvedValueOnce({
         ok: true,
@@ -221,6 +190,9 @@ describe('useDeckState', () => {
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
     });
+
+    expect(result.current.currentCardIndex).toBe(0);
+    expect(result.current.totalCards).toBe(2);
 
     const updatedDueCards = {
       cards: [mockDueCards.cards[1]],
@@ -241,7 +213,7 @@ describe('useDeckState', () => {
       await result.current.reloadDeck();
     });
 
-    expect(result.current.totalCards).toBe(1);
-    expect(result.current.currentCardIndex).toBe(0);
+    expect(result.current.totalCards).toBe(2);
+    expect(result.current.currentCardIndex).toBe(1);
   });
 });

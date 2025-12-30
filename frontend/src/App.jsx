@@ -4,6 +4,7 @@ import { EditorOutputPane } from './components/EditorOutputPane';
 import { Footer } from './components/Footer';
 import { SplitPane } from './components/SplitPane';
 import { ReviewComplete } from './components/ReviewComplete';
+import { DeckSelector } from './components/DeckSelector';
 import { useBackendHealth } from './hooks/useBackendHealth';
 import { useCodeExecution } from './hooks/useCodeExecution';
 import { useDeckState } from './hooks/useDeckState';
@@ -22,8 +23,9 @@ function App() {
     clearOutput,
   } = useCodeExecution(backendAvailable);
 
-  const DECK_ID = 'QhL3SFpO';
   const USER_ID = 'user1';
+  const [selectedDeckId, setSelectedDeckId] = useState('QhL3SFpO');
+
   const {
     currentCard,
     currentCardIndex,
@@ -36,7 +38,7 @@ function App() {
     error: deckError,
     deckName,
     reloadDeck,
-  } = useDeckState(DECK_ID);
+  } = useDeckState(selectedDeckId);
 
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const totalSections = currentCard?.sections.length || 0;
@@ -94,12 +96,18 @@ function App() {
     console.log('Deck state changed:', { deckLoading, totalCards, hasCurrentCard: !!currentCard });
   }, [deckLoading, totalCards, currentCard]);
 
+  useEffect(() => {
+    setCurrentSectionIndex(0);
+    setCode('# Write your Python code here and press Cmd+Enter to run\n');
+    clearOutput();
+  }, [selectedDeckId, clearOutput]);
+
   const showCompleteModal = !deckLoading && totalCards === 0;
 
   return (
     <div className="flex flex-col h-screen bg-surface">
       {showCompleteModal && (
-        <ReviewComplete userId={USER_ID} deckId={DECK_ID} onRedo={handleReloadDeck} />
+        <ReviewComplete userId={USER_ID} deckId={selectedDeckId} onRedo={handleReloadDeck} />
       )}
       <header className="h-12 border-b border-border bg-surface-panel flex items-center justify-between px-4 shrink-0 z-20">
         <div className="flex items-center gap-4">
@@ -111,7 +119,11 @@ function App() {
           <div className="flex items-center gap-2 text-sm text-content-muted">
             <span>decks</span>
             <span className="text-border">/</span>
-            <span className="text-content">{deckName || 'loading...'}</span>
+            <DeckSelector
+              currentDeckId={selectedDeckId}
+              currentDeckName={deckName}
+              onSelectDeck={setSelectedDeckId}
+            />
           </div>
         </div>
         <div className="flex items-center gap-6">
@@ -150,7 +162,7 @@ function App() {
               onShowAnswer={handleShowAnswer}
               onHideAnswer={handleHideAnswer}
               showAnswer={showAnswer}
-              deckId={DECK_ID}
+              deckId={selectedDeckId}
               reloadDeck={reloadDeck}
             />,
             <EditorOutputPane

@@ -38,6 +38,15 @@ export const api = {
     return result;
   },
 
+  async listDecks() {
+    const response = await fetch(`${API_URL}/api/decks`);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+      throw new Error(error.detail || 'Failed to list decks');
+    }
+    return response.json();
+  },
+
   async getDeck(deckId) {
     const response = await fetch(`${API_URL}/api/decks/${deckId}`);
     if (!response.ok) {

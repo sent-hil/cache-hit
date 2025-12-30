@@ -106,6 +106,68 @@ async def get_due_cards(
 ):
     logger.info(f"Getting due cards: user={user_id}, deck={deck_id}")
 
+    # Handle "all" deck - combine due cards from all decks
+    if deck_id == "all":
+        all_cards_list = []
+        for actual_deck_id in cache.keys():
+            try:
+                # Get due cards for this deck
+                deck = cache[actual_deck_id]
+                all_states = storage._load_user_data(user_id, actual_deck_id)
+                has_any_states = len(all_states.get("card_states", {})) > 0
+                due_states = storage.get_due_cards(user_id, actual_deck_id)
+
+                # If no states exist, initialize all cards as due
+                if not has_any_states:
+                    for card in deck.cards:
+                        sections_list = []
+                        for section_index in range(len(card.sections)):
+                            state = storage.create_card_state(
+                                user_id, actual_deck_id, card.id, section_index
+                            )
+                            sections_list.append(
+                                {
+                                    "section_index": section_index,
+                                    "due_date": state["due_date"],
+                                    "difficulty": state["difficulty"],
+                                    "reps": state["reps"],
+                                    "state": state["state"],
+                                }
+                            )
+                        all_cards_list.append(
+                            {"card": card.model_dump(), "due_sections": sections_list}
+                        )
+                else:
+                    # Build map of due cards for this deck
+                    cards_map = {}
+                    for state in due_states:
+                        card_id = state["card_id"]
+                        if card_id not in cards_map:
+                            card = next((c for c in deck.cards if c.id == card_id), None)
+                            if not card:
+                                logger.warning(f"Card {card_id} not found in deck {actual_deck_id}")
+                                continue
+                            cards_map[card_id] = {"card": card.model_dump(), "due_sections": []}
+
+                        cards_map[card_id]["due_sections"].append(
+                            {
+                                "section_index": state["section_index"],
+                                "due_date": state["due_date"],
+                                "difficulty": state["difficulty"],
+                                "reps": state["reps"],
+                                "state": state["state"],
+                            }
+                        )
+                    all_cards_list.extend(list(cards_map.values()))
+            except Exception as e:
+                logger.error(f"Error loading due cards for deck {actual_deck_id}: {e}")
+                continue
+
+        return {
+            "cards": all_cards_list,
+            "total_due": sum(len(c["due_sections"]) for c in all_cards_list),
+        }
+
     if deck_id not in cache:
         raise HTTPException(status_code=404, detail=f"Deck not found: {deck_id}")
 

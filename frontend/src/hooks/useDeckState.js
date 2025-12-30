@@ -9,6 +9,7 @@ export const useDeckState = (deckId) => {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [initialTotalCards, setInitialTotalCards] = useState(0);
   const userId = 'user1'; // Hardcoded for now
 
   const loadDeck = async () => {
@@ -30,6 +31,11 @@ export const useDeckState = (deckId) => {
       const cards = dueData.cards.map(item => item.card);
       setDueCards(cards);
       setCurrentCardIndex(0);
+
+      // Set initial total only on first load
+      if (initialTotalCards === 0) {
+        setInitialTotalCards(cards.length);
+      }
     } catch (err) {
       console.error('Failed to load deck:', err);
       setError(err.message || 'Failed to load deck');
@@ -45,6 +51,7 @@ export const useDeckState = (deckId) => {
       return;
     }
 
+    setInitialTotalCards(0);
     loadDeck();
   }, [deckId]);
 
@@ -61,13 +68,14 @@ export const useDeckState = (deckId) => {
   };
 
   const currentCard = dueCards[currentCardIndex] || null;
-  const totalCards = dueCards.length;
-  const canGoNext = currentCardIndex < totalCards - 1;
+  const totalCards = initialTotalCards || dueCards.length;
+  const cardsReviewed = Math.max(0, initialTotalCards - dueCards.length);
+  const canGoNext = currentCardIndex < dueCards.length - 1;
   const canGoPrevious = currentCardIndex > 0;
 
   return {
     currentCard,
-    currentCardIndex,
+    currentCardIndex: cardsReviewed,
     totalCards,
     nextCard,
     previousCard,

@@ -209,3 +209,4 @@ __marimo__/
 .claude/settings.local.json
 data/
 backend/review_data/
+.coverage

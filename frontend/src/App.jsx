@@ -3,13 +3,12 @@ import { QuestionPane } from './components/QuestionPane';
 import { EditorOutputPane } from './components/EditorOutputPane';
 import { Footer } from './components/Footer';
 import { SplitPane } from './components/SplitPane';
-import { BackendStatus } from './components/BackendStatus';
 import { useBackendHealth } from './hooks/useBackendHealth';
 import { useCodeExecution } from './hooks/useCodeExecution';
 
 function App() {
   const [code, setCode] = useState('# Write your Python code here and press Cmd+Enter to run\n');
-  const { available: backendAvailable, checking, checkHealth } = useBackendHealth();
+  const { available: backendAvailable, checking, error: backendError, checkHealth } = useBackendHealth();
   const {
     output,
     isRunning,
@@ -17,6 +16,7 @@ function App() {
     elapsedMs,
     executeCode,
     executeQueuedCode,
+    clearOutput,
   } = useCodeExecution(backendAvailable);
 
   // Execute queued code when backend becomes available
@@ -68,12 +68,6 @@ function App() {
         </div>
       </header>
 
-      <BackendStatus
-        available={backendAvailable}
-        checking={checking}
-        onRetry={checkHealth}
-      />
-
       <main className="flex-1 flex min-w-0 min-h-0 relative">
         <SplitPane direction="horizontal">
           {[
@@ -87,6 +81,10 @@ function App() {
               isRunning={isRunning}
               elapsedMs={elapsedMs}
               backendAvailable={backendAvailable}
+              backendChecking={checking}
+              backendError={backendError}
+              onClearOutput={clearOutput}
+              onReconnect={checkHealth}
             />,
           ]}
         </SplitPane>

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { parseAnsi } from '../utils/ansiParser';
 
-export const OutputPanel = ({ output, isRunning, elapsedMs }) => {
+export const OutputPanel = ({ output, isRunning, elapsedMs, onClear }) => {
   const outputRef = useRef(null);
 
   // Auto-scroll to bottom when output changes
@@ -81,7 +81,12 @@ export const OutputPanel = ({ output, isRunning, elapsedMs }) => {
             Console Output
           </span>
         </div>
-        <button className="text-[10px] text-content-muted hover:text-white uppercase">Clear</button>
+        <button
+          onClick={onClear}
+          className="text-[10px] text-content-muted hover:text-white uppercase tracking-wider transition-colors"
+        >
+          Clear
+        </button>
       </div>
 
       <div

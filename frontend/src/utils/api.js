@@ -6,7 +6,12 @@ export const api = {
     if (!response.ok) {
       throw new Error('Health check failed');
     }
-    return response.json();
+    const data = await response.json();
+    // Check if status is 'ok' (all containers running)
+    if (data.status !== 'ok') {
+      throw new Error('Backend containers not ready');
+    }
+    return data;
   },
 
   async executeCode(code, language = 'python') {

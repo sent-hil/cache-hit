@@ -66,6 +66,10 @@ export const useCodeExecution = (backendAvailable) => {
     }
   };
 
+  const clearOutput = () => {
+    setOutput(null);
+  };
+
   return {
     output,
     isRunning,
@@ -73,5 +77,6 @@ export const useCodeExecution = (backendAvailable) => {
     elapsedMs: timer.elapsedMs,
     executeCode,
     executeQueuedCode,
+    clearOutput,
   };
 };

@@ -16,6 +16,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from deck_parser import Deck, Card, parse_deck_folder
+from fsrs_scheduler import FSRSScheduler
+from review_storage import ReviewStorage
 
 # Configure logging
 logging.basicConfig(
@@ -64,6 +66,22 @@ class HealthResponse(BaseModel):
     status: str
     containers: Dict[str, str]
     uptime_seconds: float
+
+
+class ReviewRequest(BaseModel):
+    user_id: str
+    deck_id: str
+    card_id: str
+    section_index: int
+    rating: int  # 1=Again, 2=Hard, 3=Good, 4=Easy
+
+
+class ReviewResponse(BaseModel):
+    success: bool
+    next_review_date: str
+    difficulty: float
+    stability: float
+    state: str
 
 
 class ContainerManager:
@@ -363,6 +381,10 @@ container_manager: Optional[ContainerManager] = None
 # Global deck cache
 deck_cache: Dict[str, Deck] = {}
 
+# Global FSRS scheduler and storage
+fsrs_scheduler = FSRSScheduler()
+review_storage = ReviewStorage()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -499,6 +521,126 @@ async def get_card(deck_id: str, card_index: int):
         )
 
     return deck.cards[card_index]
+
+
+@app.post("/api/review", response_model=ReviewResponse)
+async def submit_review(req: ReviewRequest):
+    """Submit a review rating for a card section."""
+    logger.info(f"Review submitted: user={req.user_id}, deck={req.deck_id}, card={req.card_id}, section={req.section_index}, rating={req.rating}")
+
+    # Validate rating
+    if req.rating not in [1, 2, 3, 4]:
+        raise HTTPException(status_code=400, detail="Rating must be 1-4 (1=Again, 2=Hard, 3=Good, 4=Easy)")
+
+    # Get or create card state
+    state = review_storage.get_card_state(
+        req.user_id, req.deck_id, req.card_id, req.section_index
+    )
+
+    if not state:
+        # Initialize new card
+        state = review_storage.create_card_state(
+            req.user_id, req.deck_id, req.card_id, req.section_index
+        )
+
+    # Process review with FSRS
+    updated_state, log = fsrs_scheduler.review_card(state, req.rating)
+
+    # Save to database
+    review_storage.update_card_state(
+        req.user_id, req.deck_id, req.card_id,
+        req.section_index, updated_state
+    )
+    review_storage.save_review_log(
+        req.user_id, req.deck_id, req.card_id,
+        req.section_index, log
+    )
+
+    logger.info(f"Review processed: next_review={updated_state['due_date']}, difficulty={updated_state['difficulty']:.2f}")
+
+    return ReviewResponse(
+        success=True,
+        next_review_date=updated_state['due_date'],
+        difficulty=updated_state['difficulty'],
+        stability=updated_state['stability'],
+        state=updated_state['state']
+    )
+
+
+@app.get("/api/review/due")
+async def get_due_cards(user_id: str, deck_id: str):
+    """Get all cards/sections due for review."""
+    logger.info(f"Getting due cards: user={user_id}, deck={deck_id}")
+
+    # Check if deck exists
+    if deck_id not in deck_cache:
+        raise HTTPException(status_code=404, detail=f"Deck not found: {deck_id}")
+
+    deck = deck_cache[deck_id]
+
+    # Get due states from storage
+    due_states = review_storage.get_due_cards(user_id, deck_id)
+
+    # If no states exist, return all cards as new
+    if not due_states:
+        # Initialize states for all cards/sections
+        cards_list = []
+        for card in deck.cards:
+            sections_list = []
+            for section_index in range(len(card.sections)):
+                state = review_storage.create_card_state(
+                    user_id, deck_id, card.id, section_index
+                )
+                sections_list.append({
+                    "section_index": section_index,
+                    "due_date": state["due_date"],
+                    "difficulty": state["difficulty"],
+                    "reps": state["reps"],
+                    "state": state["state"]
+                })
+
+            cards_list.append({
+                "card": card.model_dump(),
+                "due_sections": sections_list
+            })
+
+        return {
+            "cards": cards_list,
+            "total_due": sum(len(c["due_sections"]) for c in cards_list)
+        }
+
+    # Group by card_id and enrich with card data
+    cards_map = {}
+    for state in due_states:
+        card_id = state["card_id"]
+        if card_id not in cards_map:
+            # Find card in deck
+            card = next((c for c in deck.cards if c.id == card_id), None)
+            if not card:
+                logger.warning(f"Card {card_id} not found in deck {deck_id}")
+                continue
+
+            cards_map[card_id] = {
+                "card": card.model_dump(),
+                "due_sections": []
+            }
+
+        cards_map[card_id]["due_sections"].append({
+            "section_index": state["section_index"],
+            "due_date": state["due_date"],
+            "difficulty": state["difficulty"],
+            "reps": state["reps"],
+            "state": state["state"]
+        })
+
+    cards_list = list(cards_map.values())
+
+    logger.info(f"Found {len(cards_list)} cards with due sections")
+
+    return {
+        "cards": cards_list,
+        "total_due": sum(len(c["due_sections"]) for c in cards_list)
+    }
 
 
 if __name__ == "__main__":

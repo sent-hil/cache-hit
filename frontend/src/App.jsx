@@ -61,7 +61,7 @@ function App() {
   };
 
   // Answer visibility state
-  const { showAnswer, activeTab, handleShowAnswer, handleTabChange } = useAnswerVisibility(currentCardIndex, currentSectionIndex);
+  const { showAnswer, activeTab, handleShowAnswer, handleHideAnswer, handleTabChange } = useAnswerVisibility(currentCardIndex, currentSectionIndex);
 
   // Execute queued code when backend becomes available
   useEffect(() => {
@@ -137,7 +137,12 @@ function App() {
               onNextSection={nextSection}
               onGoToSection={goToSection}
               canGoNextSection={canGoNextSection}
+              onNextCard={nextCard}
+              canGoNextCard={canGoNext}
               onShowAnswer={handleShowAnswer}
+              onHideAnswer={handleHideAnswer}
+              showAnswer={showAnswer}
+              deckId={DECK_ID}
             />,
             <EditorOutputPane
               key="editor-output"

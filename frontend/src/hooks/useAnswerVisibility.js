@@ -14,6 +14,11 @@ export const useAnswerVisibility = (currentCardIndex, currentSectionIndex) => {
     setActiveTab('answer');
   };
 
+  const handleHideAnswer = () => {
+    setShowAnswer(false);
+    setActiveTab('your-code');
+  };
+
   const handleTabChange = (tab) => {
     setActiveTab(tab);
   };
@@ -22,6 +27,7 @@ export const useAnswerVisibility = (currentCardIndex, currentSectionIndex) => {
     showAnswer,
     activeTab,
     handleShowAnswer,
+    handleHideAnswer,
     handleTabChange,
   };
 };

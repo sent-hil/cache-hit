@@ -1,3 +1,7 @@
+import { useEffect } from 'react';
+import { RatingButtons } from './RatingButtons';
+import { useReview } from '../hooks/useReview';
+
 const highlightPython = (code) => {
   // First escape HTML to prevent conflicts
   let result = code
@@ -41,8 +45,54 @@ export const QuestionPane = ({
   onNextSection,
   onGoToSection,
   canGoNextSection,
+  onNextCard,
+  canGoNextCard,
   onShowAnswer,
+  onHideAnswer,
+  showAnswer,
+  deckId,
 }) => {
+  const { submitReview, submitting } = useReview();
+  const userId = 'user1'; // Hardcoded for now
+
+  // Keyboard shortcuts for rating (1/2/3/4)
+  useEffect(() => {
+    if (!showAnswer) return;
+
+    const handleKeyPress = (e) => {
+      const rating = parseInt(e.key);
+      if (rating >= 1 && rating <= 4) {
+        handleRate(rating);
+      }
+    };
+
+    window.addEventListener('keypress', handleKeyPress);
+    return () => window.removeEventListener('keypress', handleKeyPress);
+  }, [showAnswer, card, currentSectionIndex]);
+
+  const handleRate = async (rating) => {
+    if (!card || submitting) return;
+
+    try {
+      const result = await submitReview(userId, deckId, card.id, currentSectionIndex, rating);
+      console.log('Review submitted successfully:', result);
+
+      // Move to next section or next card
+      if (canGoNextSection) {
+        onNextSection();
+      } else if (canGoNextCard) {
+        // Last section of current card, move to next card
+        onNextCard();
+      } else {
+        // No more cards/sections
+        onHideAnswer();
+        alert('All reviews completed!');
+      }
+    } catch (err) {
+      console.error('Failed to submit review:', err);
+      alert('Failed to submit review: ' + err.message);
+    }
+  };
   if (loading) {
     return (
       <section className="w-full flex flex-col border-r border-border bg-surface overflow-y-auto custom-scrollbar relative">
@@ -188,13 +238,34 @@ export const QuestionPane = ({
                           <span>Next Section</span>
                         </button>
                       )}
-                      <button
-                        onClick={onShowAnswer}
-                        className="group relative px-6 py-2 bg-primary hover:bg-[#4b96ef] text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 border border-primary hover:border-[#8ec2ff] shadow-sm ml-auto"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">visibility</span>
-                        Show Answer
-                      </button>
+                      {!showAnswer ? (
+                        <button
+                          onClick={onShowAnswer}
+                          className="group relative px-6 py-2 bg-primary hover:bg-[#4b96ef] text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 border border-primary hover:border-[#8ec2ff] shadow-sm ml-auto"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">visibility</span>
+                          Show Answer
+                        </button>
+                      ) : (
+                        <div className="w-full">
+                          {currentSectionIndex === totalSections - 1 ? (
+                            <RatingButtons onRate={handleRate} disabled={submitting} />
+                          ) : (
+                            <div className="flex justify-end">
+                              <button
+                                onClick={() => {
+                                  onHideAnswer();
+                                  onNextSection();
+                                }}
+                                className="px-6 py-3 bg-primary hover:bg-[#4b96ef] text-white text-sm font-bold uppercase tracking-wider transition-all flex items-center gap-2 border border-primary hover:border-[#8ec2ff] shadow-sm"
+                              >
+                                <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                                Continue to Next Section
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
 

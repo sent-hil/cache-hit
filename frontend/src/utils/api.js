@@ -37,4 +37,22 @@ export const api = {
 
     return result;
   },
+
+  async getDeck(deckId) {
+    const response = await fetch(`${API_URL}/api/decks/${deckId}`);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+      throw new Error(error.detail || 'Failed to load deck');
+    }
+    return response.json();
+  },
+
+  async getCard(deckId, cardIndex) {
+    const response = await fetch(`${API_URL}/api/decks/${deckId}/cards/${cardIndex}`);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+      throw new Error(error.detail || 'Failed to load card');
+    }
+    return response.json();
+  },
 };

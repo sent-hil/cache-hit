@@ -1,4 +1,4 @@
-export const Footer = () => {
+export const Footer = ({ onSkipCard, onPreviousCard, canGoNext, canGoPrevious }) => {
   return (
     <footer className="h-14 border-t border-border bg-surface-panel shrink-0 z-20">
       <div className="h-full px-6 flex items-center justify-between">
@@ -12,12 +12,24 @@ export const Footer = () => {
         </div>
 
         <div className="flex items-center gap-3 ml-auto sm:ml-0 w-full sm:w-auto justify-end">
-          <button className="px-4 py-2 text-xs font-bold text-content-muted hover:text-content border border-transparent hover:border-border transition-colors uppercase tracking-wider">
-            Skip Card
-          </button>
-          <button className="group relative px-6 py-2 bg-primary hover:bg-[#4b96ef] text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 border border-primary hover:border-[#8ec2ff] shadow-sm">
-            <span className="material-symbols-outlined text-[16px]">visibility</span>
-            Show Answer
+          {canGoPrevious && (
+            <button
+              onClick={onPreviousCard}
+              className="px-4 py-2 text-xs font-bold text-content-muted hover:text-content border border-transparent hover:border-border transition-colors uppercase tracking-wider"
+            >
+              Previous Card
+            </button>
+          )}
+          <button
+            onClick={onSkipCard}
+            disabled={!canGoNext}
+            className={`px-4 py-2 text-xs font-bold border border-transparent transition-colors uppercase tracking-wider ${
+              canGoNext
+                ? 'text-content-muted hover:text-content hover:border-border'
+                : 'text-content-muted opacity-50 cursor-not-allowed'
+            }`}
+          >
+            Next Card
           </button>
         </div>
       </div>

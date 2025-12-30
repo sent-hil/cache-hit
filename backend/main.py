@@ -6,6 +6,7 @@ import time
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, Optional
 
 import docker
@@ -13,6 +14,8 @@ from docker.models.containers import Container
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+
+from deck_parser import Deck, Card, parse_deck_folder
 
 # Configure logging
 logging.basicConfig(
@@ -357,6 +360,9 @@ class ContainerManager:
 # Global container manager
 container_manager: Optional[ContainerManager] = None
 
+# Global deck cache
+deck_cache: Dict[str, Deck] = {}
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -381,6 +387,21 @@ async def lifespan(app: FastAPI):
     logger.info("Pre-starting containers for all languages")
     for language in LANGUAGE_CONFIG.keys():
         container_manager.create_container(language)
+
+    # Load flashcard decks
+    logger.info("Loading flashcard decks")
+    data_folder = Path(__file__).parent.parent / "data"
+    if data_folder.exists():
+        for folder in data_folder.iterdir():
+            if folder.is_dir():
+                try:
+                    deck = parse_deck_folder(str(folder))
+                    deck_cache[deck.id] = deck
+                    logger.info(f"Loaded deck: {deck.name} ({deck.total_cards} cards)")
+                except Exception as e:
+                    logger.error(f"Failed to load deck from {folder.name}: {e}")
+    else:
+        logger.warning(f"Data folder not found: {data_folder}")
 
     logger.info("FastAPI application startup complete")
 
@@ -448,6 +469,36 @@ async def health_check():
         containers=container_statuses,
         uptime_seconds=round(uptime, 2)
     )
+
+
+@app.get("/api/decks/{deck_id}", response_model=Deck)
+async def get_deck(deck_id: str):
+    """Get deck metadata and card list."""
+    logger.info(f"Getting deck: {deck_id}")
+
+    if deck_id not in deck_cache:
+        raise HTTPException(status_code=404, detail=f"Deck not found: {deck_id}")
+
+    return deck_cache[deck_id]
+
+
+@app.get("/api/decks/{deck_id}/cards/{card_index}", response_model=Card)
+async def get_card(deck_id: str, card_index: int):
+    """Get specific card from a deck."""
+    logger.info(f"Getting card {card_index} from deck: {deck_id}")
+
+    if deck_id not in deck_cache:
+        raise HTTPException(status_code=404, detail=f"Deck not found: {deck_id}")
+
+    deck = deck_cache[deck_id]
+
+    if card_index < 0 or card_index >= len(deck.cards):
+        raise HTTPException(
+            status_code=404,
+            detail=f"Card index {card_index} out of range (0-{len(deck.cards)-1})"
+        )
+
+    return deck.cards[card_index]
 
 
 if __name__ == "__main__":

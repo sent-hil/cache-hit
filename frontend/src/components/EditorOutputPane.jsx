@@ -14,15 +14,44 @@ export const EditorOutputPane = ({
   backendError,
   onClearOutput,
   onReconnect,
+  activeTab,
+  onTabChange,
+  showAnswer,
+  answerCode,
 }) => {
   return (
     <section className="w-full h-full flex flex-col bg-surface relative">
       <div className="flex items-center bg-surface border-b border-border">
         <div className="flex">
-          <div className="px-4 py-2 bg-surface-panel border-r border-border text-xs text-white font-mono flex items-center gap-2 border-t-2 border-t-primary">
-            <span className="material-symbols-outlined text-[14px] text-primary">code</span>
-            solution.py
-          </div>
+          <button
+            onClick={() => onTabChange('your-code')}
+            className={`px-4 py-2 border-r border-border text-xs font-mono flex items-center gap-2 transition-colors ${
+              activeTab === 'your-code'
+                ? 'bg-surface-panel text-white border-t-2 border-t-primary'
+                : 'bg-surface text-content-muted hover:text-white border-t-2 border-t-transparent'
+            }`}
+          >
+            <span className={`material-symbols-outlined text-[14px] ${activeTab === 'your-code' ? 'text-primary' : ''}`}>
+              code
+            </span>
+            Your Code
+          </button>
+          <button
+            onClick={() => showAnswer && onTabChange('answer')}
+            disabled={!showAnswer}
+            className={`px-4 py-2 border-r border-border text-xs font-mono flex items-center gap-2 transition-colors ${
+              activeTab === 'answer'
+                ? 'bg-surface-panel text-white border-t-2 border-t-primary'
+                : showAnswer
+                ? 'bg-surface text-content-muted hover:text-white border-t-2 border-t-transparent cursor-pointer'
+                : 'bg-surface text-content-muted opacity-50 cursor-not-allowed border-t-2 border-t-transparent'
+            }`}
+          >
+            <span className={`material-symbols-outlined text-[14px] ${activeTab === 'answer' ? 'text-primary' : ''}`}>
+              check_circle
+            </span>
+            Answer
+          </button>
         </div>
         <div className="ml-auto px-2 flex items-center gap-2">
           {backendChecking ? (
@@ -78,8 +107,8 @@ export const EditorOutputPane = ({
           {[
             <CodeEditor
               key="editor"
-              value={code}
-              onChange={onCodeChange}
+              value={activeTab === 'your-code' ? code : answerCode}
+              onChange={activeTab === 'your-code' ? onCodeChange : () => {}}
               onRun={onRun}
               backendAvailable={backendAvailable}
             />,

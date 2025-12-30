@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { api } from '../utils/api';
 import { useTimer } from './useTimer';
 
@@ -66,9 +66,9 @@ export const useCodeExecution = (backendAvailable) => {
     }
   };
 
-  const clearOutput = () => {
+  const clearOutput = useCallback(() => {
     setOutput(null);
-  };
+  }, []);
 
   return {
     output,

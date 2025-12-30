@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { RatingButtons } from './RatingButtons';
+import { RatingButtonsEnhanced } from './RatingButtonsEnhanced';
 import { useReview } from '../hooks/useReview';
 
 const highlightPython = (code) => {
@@ -114,8 +114,9 @@ export const QuestionPane = ({
   }
 
   return (
-    <section className="w-full flex flex-col border-r border-border bg-surface overflow-y-auto custom-scrollbar relative pb-20">
-      <div className="max-w-4xl w-full mx-auto p-8 flex flex-col gap-8">
+    <section className="w-full h-full flex flex-col border-r border-border bg-surface relative">
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="max-w-4xl w-full mx-auto py-8 px-6 flex flex-col gap-8 pb-6">
         <div className="flex items-center bg-surface-subtle border border-border p-3">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center size-8 bg-accent/10 border border-accent/20 text-accent">
@@ -237,24 +238,18 @@ export const QuestionPane = ({
                           Show Answer
                         </button>
                       ) : (
-                        <div className="w-full">
-                          {currentSectionIndex === totalSections - 1 ? (
-                            <RatingButtons onRate={handleRate} disabled={submitting} />
-                          ) : (
-                            <div className="flex justify-end">
-                              <button
-                                onClick={() => {
-                                  onHideAnswer();
-                                  onNextSection();
-                                }}
-                                className="px-6 py-3 bg-primary hover:bg-[#4b96ef] text-white text-sm font-bold uppercase tracking-wider transition-all flex items-center gap-2 border border-primary hover:border-[#8ec2ff] shadow-sm"
-                              >
-                                <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-                                Continue to Next Section
-                              </button>
-                            </div>
-                          )}
-                        </div>
+                        currentSectionIndex !== totalSections - 1 && (
+                          <button
+                            onClick={() => {
+                              onHideAnswer();
+                              onNextSection();
+                            }}
+                            className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 border border-green-500 hover:border-green-400 shadow-sm ml-auto"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                            Continue
+                          </button>
+                        )
                       )}
                     </div>
                   )}
@@ -263,6 +258,13 @@ export const QuestionPane = ({
               </div>
             );
           })}
+        </div>
+        </div>
+      </div>
+
+      <div className="border-t border-border bg-surface">
+        <div className="max-w-4xl w-full mx-auto px-6">
+          <RatingButtonsEnhanced onRate={handleRate} disabled={submitting} />
         </div>
       </div>
     </section>

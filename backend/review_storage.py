@@ -143,3 +143,23 @@ class ReviewStorage:
         due_cards.sort(key=lambda x: datetime.fromisoformat(x["due_date"]))
 
         return due_cards[:limit]
+
+    def reset_reviews_for_today(
+        self,
+        user_id: str,
+        deck_id: str
+    ) -> int:
+        """Reset all card states to be due today. Returns number of cards reset."""
+        now = datetime.now(timezone.utc)
+        data = self._load_user_data(user_id, deck_id)
+
+        count = 0
+        for key, state in data["card_states"].items():
+            state["due_date"] = now.isoformat()
+            state["updated_at"] = now.isoformat()
+            count += 1
+
+        if count > 0:
+            self._save_user_data(user_id, deck_id, data)
+
+        return count

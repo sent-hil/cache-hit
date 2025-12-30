@@ -23,6 +23,7 @@ function App() {
   } = useCodeExecution(backendAvailable);
 
   const DECK_ID = 'QhL3SFpO';
+  const USER_ID = 'user1';
   const {
     currentCard,
     currentCardIndex,
@@ -98,7 +99,7 @@ function App() {
   return (
     <div className="flex flex-col h-screen bg-surface">
       {showCompleteModal && (
-        <ReviewComplete onClose={handleReloadDeck} />
+        <ReviewComplete userId={USER_ID} deckId={DECK_ID} onRedo={handleReloadDeck} />
       )}
       <header className="h-12 border-b border-border bg-surface-panel flex items-center justify-between px-4 shrink-0 z-20">
         <div className="flex items-center gap-4">

@@ -55,4 +55,21 @@ export const api = {
     }
     return response.json();
   },
+
+  async resetReviews(userId, deckId) {
+    const response = await fetch(`${API_URL}/api/review/reset`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ user_id: userId, deck_id: deckId }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+      throw new Error(error.detail || 'Failed to reset reviews');
+    }
+
+    return response.json();
+  },
 };

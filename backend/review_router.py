@@ -30,6 +30,16 @@ class ReviewResponse(BaseModel):
     state: str
 
 
+class ResetRequest(BaseModel):
+    user_id: str
+    deck_id: str
+
+
+class ResetResponse(BaseModel):
+    success: bool
+    cards_reset: int
+
+
 @lru_cache
 def get_fsrs_scheduler() -> FSRSScheduler:
     return FSRSScheduler()
@@ -162,3 +172,20 @@ async def get_due_cards(
         "cards": cards_list,
         "total_due": sum(len(c["due_sections"]) for c in cards_list),
     }
+
+
+@router.post("/review/reset", response_model=ResetResponse)
+async def reset_reviews(
+    req: ResetRequest,
+    storage: ReviewStorage = Depends(get_review_storage)
+):
+    logger.info(f"Resetting reviews: user={req.user_id}, deck={req.deck_id}")
+
+    cards_reset = storage.reset_reviews_for_today(req.user_id, req.deck_id)
+
+    logger.info(f"Reset {cards_reset} cards for user {req.user_id}, deck {req.deck_id}")
+
+    return ResetResponse(
+        success=True,
+        cards_reset=cards_reset
+    )

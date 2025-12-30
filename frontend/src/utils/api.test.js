@@ -175,4 +175,47 @@ describe('api', () => {
       await expect(api.getCard('QhL3SFpO', 999)).rejects.toThrow('Card index out of range');
     });
   });
+
+  describe('resetReviews', () => {
+    it('should reset reviews successfully', async () => {
+      const mockResponse = {
+        success: true,
+        cards_reset: 5,
+      };
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const result = await api.resetReviews('user1', 'QhL3SFpO');
+
+      expect(fetch).toHaveBeenCalledWith('http://localhost:8000/api/review/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: 'user1', deck_id: 'QhL3SFpO' }),
+      });
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('should throw error when reset fails', async () => {
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ detail: 'Reset failed' }),
+      });
+
+      await expect(api.resetReviews('user1', 'QhL3SFpO')).rejects.toThrow('Reset failed');
+    });
+
+    it('should handle json parse error', async () => {
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        json: async () => {
+          throw new Error('Parse error');
+        },
+      });
+
+      await expect(api.resetReviews('user1', 'QhL3SFpO')).rejects.toThrow('Unknown error');
+    });
+  });
 });

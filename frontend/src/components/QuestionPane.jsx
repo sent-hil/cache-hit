@@ -3,23 +3,19 @@ import { RatingButtons } from './RatingButtons';
 import { useReview } from '../hooks/useReview';
 
 const highlightPython = (code) => {
-  // First escape HTML to prevent conflicts
   let result = code
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 
-  // Use unique markers that won't match any of our regex patterns
-  // Using lowercase letters and special chars that won't match \b or [A-Z]
   result = result
-    .replace(/(#.*)/g, '§§comment1§§$1§§comment2§§') // Comments
-    .replace(/\b(def|class|import|from|return|if|elif|else|for|while|in|range|len|print|with|as|try|except|finally|raise|pass|break|continue|yield|lambda|True|False|None)\b/g, '§§keyword1§§$1§§keyword2§§') // Keywords
-    .replace(/\b([A-Z][a-zA-Z0-9_]*)\b/g, '§§classname1§§$1§§classname2§§') // Classes
-    .replace(/"([^"]*)"/g, '"§§string1§§$1§§string2§§"') // Strings
-    .replace(/'([^']*)'/g, "'§§string1§§$1§§string2§§'") // Strings
-    .replace(/\b(\d+\.?\d*)\b/g, '§§number1§§$1§§number2§§'); // Numbers
+    .replace(/(#.*)/g, '§§comment1§§$1§§comment2§§')
+    .replace(/\b(def|class|import|from|return|if|elif|else|for|while|in|range|len|print|with|as|try|except|finally|raise|pass|break|continue|yield|lambda|True|False|None)\b/g, '§§keyword1§§$1§§keyword2§§')
+    .replace(/\b([A-Z][a-zA-Z0-9_]*)\b/g, '§§classname1§§$1§§classname2§§')
+    .replace(/"([^"]*)"/g, '"§§string1§§$1§§string2§§"')
+    .replace(/'([^']*)'/g, "'§§string1§§$1§§string2§§'")
+    .replace(/\b(\d+\.?\d*)\b/g, '§§number1§§$1§§number2§§');
 
-  // Finally convert markers to HTML
   result = result
     .replace(/§§comment1§§/g, '<span class="syntax-c">')
     .replace(/§§comment2§§/g, '</span>')
@@ -51,11 +47,11 @@ export const QuestionPane = ({
   onHideAnswer,
   showAnswer,
   deckId,
+  reloadDeck,
 }) => {
   const { submitReview, submitting } = useReview();
-  const userId = 'user1'; // Hardcoded for now
+  const userId = 'user1';
 
-  // Keyboard shortcuts for rating (1/2/3/4)
   useEffect(() => {
     if (!showAnswer) return;
 
@@ -74,20 +70,14 @@ export const QuestionPane = ({
     if (!card || submitting) return;
 
     try {
-      const result = await submitReview(userId, deckId, card.id, currentSectionIndex, rating);
-      console.log('Review submitted successfully:', result);
-
-      // Move to next section or next card
-      if (canGoNextSection) {
-        onNextSection();
-      } else if (canGoNextCard) {
-        // Last section of current card, move to next card
-        onNextCard();
-      } else {
-        // No more cards/sections
-        onHideAnswer();
-        alert('All reviews completed!');
+      console.log(`Submitting review for all ${totalSections} sections of card ${card.id}`);
+      for (let i = 0; i < totalSections; i++) {
+        const result = await submitReview(userId, deckId, card.id, i, rating);
+        console.log(`Section ${i} review submitted:`, result);
       }
+
+      onHideAnswer();
+      await reloadDeck();
     } catch (err) {
       console.error('Failed to submit review:', err);
       alert('Failed to submit review: ' + err.message);

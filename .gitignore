@@ -211,3 +211,4 @@ data/
 backend/review_data/
 .coverage
 .coveragerc
+coverage/

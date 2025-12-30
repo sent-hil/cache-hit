@@ -10,7 +10,6 @@ export const CodeEditor = ({ value, onChange, onRun, backendAvailable }) => {
   const handleEditorDidMount = (editor, monaco) => {
     editorRef.current = editor;
 
-    // Define custom GitHub-style dark theme
     monaco.editor.defineTheme('github-dark', {
       base: 'vs-dark',
       inherit: true,
@@ -34,19 +33,15 @@ export const CodeEditor = ({ value, onChange, onRun, backendAvailable }) => {
       },
     });
 
-    // Set the custom theme
     monaco.editor.setTheme('github-dark');
 
-    // Add Cmd/Ctrl+Enter keybinding
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
       if (onRun) {
-        // Get the current value directly from the editor to avoid stale closure
         const currentCode = editor.getValue();
         onRun(currentCode);
       }
     });
 
-    // Configure Python language features
     monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
       noSemanticValidation: false,
       noSyntaxValidation: false,

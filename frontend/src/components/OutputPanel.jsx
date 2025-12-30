@@ -4,7 +4,6 @@ import { parseAnsi } from '../utils/ansiParser';
 export const OutputPanel = ({ output, isRunning, elapsedMs, onClear }) => {
   const outputRef = useRef(null);
 
-  // Auto-scroll to bottom when output changes
   useEffect(() => {
     if (outputRef.current) {
       outputRef.current.scrollTop = outputRef.current.scrollHeight;

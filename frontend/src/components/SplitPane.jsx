@@ -2,20 +2,18 @@ import { useState, useRef, useEffect } from 'react';
 
 export const SplitPane = ({
   children,
-  direction = 'vertical', // 'vertical' (top/bottom) or 'horizontal' (left/right)
-  initialPosition = 50, // Initial split position percentage
-  // Legacy props for backward compatibility
+  direction = 'vertical',
+  initialPosition = 50,
   topChildren,
   bottomChildren,
 }) => {
-  const [splitPosition, setSplitPosition] = useState(initialPosition); // Percentage
+  const [splitPosition, setSplitPosition] = useState(initialPosition);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
 
   const isHorizontal = direction === 'horizontal';
-  const MIN_SIZE = isHorizontal ? 30 : 20; // 30% for horizontal, 20% for vertical
+  const MIN_SIZE = isHorizontal ? 30 : 20;
 
-  // Support both new children array and legacy props
   const [firstChild, secondChild] = children || [topChildren, bottomChildren];
 
   const handleMouseDown = (e) => {
@@ -30,12 +28,10 @@ export const SplitPane = ({
     const container = containerRef.current;
     const containerRect = container.getBoundingClientRect();
 
-    // For horizontal: use clientX and width, for vertical: use clientY and height
     const newPosition = isHorizontal
       ? ((e.clientX - containerRect.left) / containerRect.width) * 100
       : ((e.clientY - containerRect.top) / containerRect.height) * 100;
 
-    // Clamp between MIN_SIZE and 100-MIN_SIZE
     const clampedPosition = Math.max(MIN_SIZE, Math.min(100 - MIN_SIZE, newPosition));
     setSplitPosition(clampedPosition);
   };
@@ -61,7 +57,6 @@ export const SplitPane = ({
     }
   }, [isDragging]);
 
-  // Dynamic classes and styles based on direction
   const containerClass = isHorizontal ? 'flex flex-row' : 'flex flex-col';
   const dividerClass = isHorizontal
     ? 'split-divider-horizontal'

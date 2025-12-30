@@ -11,39 +11,39 @@ export const useDeckState = (deckId) => {
   const [error, setError] = useState(null);
   const userId = 'user1'; // Hardcoded for now
 
+  const loadDeck = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Load deck metadata
+      const deckData = await api.getDeck(deckId);
+      setDeck(deckData);
+
+      // Load cards due for review
+      const response = await fetch(`${API_URL}/api/review/due?user_id=${userId}&deck_id=${deckId}`);
+      if (!response.ok) {
+        throw new Error('Failed to load due cards');
+      }
+      const dueData = await response.json();
+
+      // Extract cards from the due cards response
+      const cards = dueData.cards.map(item => item.card);
+      setDueCards(cards);
+      setCurrentCardIndex(0);
+    } catch (err) {
+      console.error('Failed to load deck:', err);
+      setError(err.message || 'Failed to load deck');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!deckId) {
       setError('No deck ID provided');
       setLoading(false);
       return;
     }
-
-    const loadDeck = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        // Load deck metadata
-        const deckData = await api.getDeck(deckId);
-        setDeck(deckData);
-
-        // Load cards due for review
-        const response = await fetch(`${API_URL}/api/review/due?user_id=${userId}&deck_id=${deckId}`);
-        if (!response.ok) {
-          throw new Error('Failed to load due cards');
-        }
-        const dueData = await response.json();
-
-        // Extract cards from the due cards response
-        const cards = dueData.cards.map(item => item.card);
-        setDueCards(cards);
-        setCurrentCardIndex(0);
-      } catch (err) {
-        console.error('Failed to load deck:', err);
-        setError(err.message || 'Failed to load deck');
-      } finally {
-        setLoading(false);
-      }
-    };
 
     loadDeck();
   }, [deckId]);
@@ -76,5 +76,6 @@ export const useDeckState = (deckId) => {
     loading,
     error,
     deckName: deck?.name || '',
+    reloadDeck: loadDeck,
   };
 };

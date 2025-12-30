@@ -3,6 +3,7 @@ import { QuestionPane } from './components/QuestionPane';
 import { EditorOutputPane } from './components/EditorOutputPane';
 import { Footer } from './components/Footer';
 import { SplitPane } from './components/SplitPane';
+import { ReviewComplete } from './components/ReviewComplete';
 import { useBackendHealth } from './hooks/useBackendHealth';
 import { useCodeExecution } from './hooks/useCodeExecution';
 import { useDeckState } from './hooks/useDeckState';
@@ -21,7 +22,6 @@ function App() {
     clearOutput,
   } = useCodeExecution(backendAvailable);
 
-  // Deck state
   const DECK_ID = 'QhL3SFpO';
   const {
     currentCard,
@@ -34,9 +34,9 @@ function App() {
     loading: deckLoading,
     error: deckError,
     deckName,
+    reloadDeck,
   } = useDeckState(DECK_ID);
 
-  // Section navigation state
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const totalSections = currentCard?.sections.length || 0;
   const canGoNextSection = currentSectionIndex < totalSections - 1;
@@ -60,17 +60,14 @@ function App() {
     }
   };
 
-  // Answer visibility state
   const { showAnswer, activeTab, handleShowAnswer, handleHideAnswer, handleTabChange } = useAnswerVisibility(currentCardIndex, currentSectionIndex);
 
-  // Execute queued code when backend becomes available
   useEffect(() => {
     if (backendAvailable && queuedCode) {
       executeQueuedCode();
     }
   }, [backendAvailable, queuedCode, executeQueuedCode]);
 
-  // Reset editor and section when card changes
   useEffect(() => {
     setCode('# Write your Python code here and press Cmd+Enter to run\n');
     clearOutput();
@@ -78,8 +75,6 @@ function App() {
   }, [currentCardIndex, clearOutput]);
 
   const handleRun = (codeOverride) => {
-    // If code is passed directly (from keyboard shortcut), use it
-    // Otherwise use the state (from Run button click)
     executeCode(codeOverride || code);
   };
 
@@ -87,12 +82,24 @@ function App() {
     setCode(value || '');
   };
 
-  // Compute answer code for current section only
   const currentSection = currentCard?.sections[currentSectionIndex];
   const answerCode = currentSection?.answer_code || '';
 
+  const handleReloadDeck = () => {
+    window.location.reload();
+  };
+
+  useEffect(() => {
+    console.log('Deck state changed:', { deckLoading, totalCards, hasCurrentCard: !!currentCard });
+  }, [deckLoading, totalCards, currentCard]);
+
+  const showCompleteModal = !deckLoading && totalCards === 0;
+
   return (
     <div className="flex flex-col h-screen bg-surface">
+      {showCompleteModal && (
+        <ReviewComplete onClose={handleReloadDeck} />
+      )}
       <header className="h-12 border-b border-border bg-surface-panel flex items-center justify-between px-4 shrink-0 z-20">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-primary font-bold tracking-tight">
@@ -143,6 +150,7 @@ function App() {
               onHideAnswer={handleHideAnswer}
               showAnswer={showAnswer}
               deckId={DECK_ID}
+              reloadDeck={reloadDeck}
             />,
             <EditorOutputPane
               key="editor-output"

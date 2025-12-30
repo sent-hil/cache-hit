@@ -24,7 +24,7 @@ function App() {
   } = useCodeExecution(backendAvailable);
 
   const USER_ID = 'user1';
-  const [selectedDeckId, setSelectedDeckId] = useState('QhL3SFpO');
+  const [selectedDeckId, setSelectedDeckId] = useState('all');
 
   const {
     currentCard,

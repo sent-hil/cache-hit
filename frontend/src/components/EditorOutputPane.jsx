@@ -13,7 +13,6 @@ export const EditorOutputPane = ({
 }) => {
   return (
     <section className="w-full h-screen flex flex-col bg-surface relative">
-      {/* Tab Bar */}
       <div className="flex items-center bg-surface border-b border-border">
         <div className="flex">
           <div className="px-4 py-2 bg-surface-panel border-r border-border text-xs text-white font-mono flex items-center gap-2 border-t-2 border-t-primary">
@@ -33,7 +32,6 @@ export const EditorOutputPane = ({
         </div>
       </div>
 
-      {/* Editor and Output Split */}
       <div className="flex-1 relative flex flex-col bg-surface min-h-0">
         <SplitPane direction="vertical" initialPosition={67}>
           {[

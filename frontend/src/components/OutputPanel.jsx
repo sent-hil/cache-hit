@@ -74,7 +74,6 @@ export const OutputPanel = ({ output, isRunning, elapsedMs }) => {
 
   return (
     <div className="h-full border-t border-border bg-surface-panel flex flex-col">
-      {/* Header */}
       <div className="flex items-center justify-between px-3 py-1.5 bg-surface-subtle border-b border-border">
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-[14px] text-content-muted">terminal</span>
@@ -85,7 +84,6 @@ export const OutputPanel = ({ output, isRunning, elapsedMs }) => {
         <button className="text-[10px] text-content-muted hover:text-white uppercase">Clear</button>
       </div>
 
-      {/* Output Content */}
       <div
         ref={outputRef}
         className="p-4 font-mono text-xs text-content-muted overflow-y-auto flex-1 font-medium"

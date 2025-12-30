@@ -1,6 +1,6 @@
-# Container Code Runner
+# CacheHit
 
-A FastAPI-based code execution sandbox for running Python and Ruby code in isolated Docker containers. Built for a spaced repetition learning app.
+A spaced repetition code review application with FastAPI-based code execution sandbox. Execute Python and Ruby code in isolated Docker containers to practice and review coding concepts.
 
 ## Features
 
@@ -215,12 +215,17 @@ async function executeCode(code: string, language: 'python' | 'ruby') {
 ## Project Structure
 
 ```
-container-code-runner/
-├── main.py           # FastAPI application and container manager
-├── test_api.py       # Test script for API endpoints
-├── pyproject.toml    # Project dependencies
-├── SPEC.md          # Detailed specification
-└── README.md        # This file
+cachehit/
+├── backend/
+│   ├── main.py           # FastAPI application and container manager
+│   ├── test_api.py       # Test script for API endpoints
+│   ├── pyproject.toml    # Project dependencies
+│   └── SPEC.md          # Detailed specification
+├── frontend/
+│   ├── src/              # React application
+│   ├── public/           # Static assets
+│   └── package.json      # Frontend dependencies
+└── README.md            # This file
 ```
 
 ## Troubleshooting

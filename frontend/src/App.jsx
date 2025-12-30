@@ -38,12 +38,11 @@ function App() {
 
   return (
     <div className="flex flex-col h-screen bg-surface">
-      {/* Header */}
       <header className="h-12 border-b border-border bg-surface-panel flex items-center justify-between px-4 shrink-0 z-20">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-primary font-bold tracking-tight">
             <span className="material-symbols-outlined text-[20px]">terminal</span>
-            <span>DevRep</span>
+            <span>CacheHit</span>
           </div>
           <span className="text-border">/</span>
           <div className="flex items-center gap-2 text-sm text-content-muted">
@@ -69,14 +68,12 @@ function App() {
         </div>
       </header>
 
-      {/* Backend Status Banner */}
       <BackendStatus
         available={backendAvailable}
         checking={checking}
         onRetry={checkHealth}
       />
 
-      {/* Main Split Layout */}
       <main className="flex-1 flex min-w-0 min-h-0 relative">
         <SplitPane direction="horizontal">
           {[
@@ -95,7 +92,6 @@ function App() {
         </SplitPane>
       </main>
 
-      {/* Footer */}
       <Footer />
     </div>
   );

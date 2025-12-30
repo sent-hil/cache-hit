@@ -91,7 +91,6 @@ export const CodeEditor = ({ value, onChange, onRun, backendAvailable }) => {
           },
         }}
       />
-      {/* Floating Run Button */}
       <div className="absolute top-4 right-4 opacity-100 transition-opacity">
         <button
           onClick={handleRunClick}

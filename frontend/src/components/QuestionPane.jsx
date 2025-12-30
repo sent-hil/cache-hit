@@ -13,7 +13,6 @@ export const QuestionPane = () => {
   return (
     <section className="w-full flex flex-col border-r border-border bg-surface overflow-y-auto custom-scrollbar relative">
       <div className="max-w-4xl w-full mx-auto p-8 flex flex-col gap-8">
-        {/* Title and Description */}
         <div className="flex flex-col gap-4 border-b border-border pb-8 border-dashed">
           <h1 className="text-2xl font-bold text-white tracking-tight">{mockCard.title}</h1>
           <p className="text-content leading-relaxed font-sans text-lg">

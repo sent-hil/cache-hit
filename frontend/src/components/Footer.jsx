@@ -2,7 +2,6 @@ export const Footer = () => {
   return (
     <footer className="h-14 border-t border-border bg-surface-panel shrink-0 z-20">
       <div className="h-full px-6 flex items-center justify-between">
-        {/* Keyboard Shortcuts */}
         <div className="flex items-center gap-6 text-[10px] font-bold text-content-muted uppercase tracking-widest hidden sm:flex">
           <div className="flex items-center gap-2">
             <kbd className="h-5 flex items-center justify-center min-w-[20px] rounded-sm bg-surface-subtle border border-border px-1 font-mono text-content">
@@ -12,7 +11,6 @@ export const Footer = () => {
           </div>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex items-center gap-3 ml-auto sm:ml-0 w-full sm:w-auto justify-end">
           <button className="px-4 py-2 text-xs font-bold text-content-muted hover:text-content border border-transparent hover:border-border transition-colors uppercase tracking-wider">
             Skip Card

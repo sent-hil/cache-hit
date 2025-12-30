@@ -13,6 +13,5 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "pydoclint>=0.8.3",
     "ty>=0.0.7",
 ]

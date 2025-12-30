@@ -1,4 +1,3 @@
-import asyncio
 import io
 import logging
 import secrets
@@ -6,7 +5,7 @@ import tarfile
 import time
 import uuid
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, Optional
 
 import docker
@@ -37,8 +36,6 @@ LANGUAGE_CONFIG = {
 }
 
 # Constants
-CONTAINER_IDLE_TIMEOUT = timedelta(minutes=30)  # 30 minutes
-CLEANUP_INTERVAL_SECONDS = 5 * 60  # 5 minutes
 MAX_OUTPUT_SIZE = 10 * 1024  # 10KB
 EXECUTION_TIMEOUT = 10  # seconds
 
@@ -332,28 +329,6 @@ class ContainerManager:
 
         logger.info(f"Container for {language} cleaned up successfully")
 
-    def cleanup_idle_containers(self):
-        """Clean up containers that have been idle for more than 30 minutes."""
-        now = datetime.now()
-        languages_to_cleanup = []
-
-        for language, last_used in self.last_used.items():
-            idle_time = now - last_used
-            if idle_time > CONTAINER_IDLE_TIMEOUT:
-                logger.info(
-                    f"Container for {language} idle for {idle_time.total_seconds():.0f}s, "
-                    f"cleaning up"
-                )
-                languages_to_cleanup.append(language)
-
-        for language in languages_to_cleanup:
-            self.cleanup_container(language)
-
-        if languages_to_cleanup:
-            logger.info(f"Cleaned up {len(languages_to_cleanup)} idle containers")
-        else:
-            logger.debug("No idle containers to clean up")
-
     def cleanup_all(self):
         """Clean up all containers."""
         logger.info("Cleaning up all containers")
@@ -383,18 +358,6 @@ class ContainerManager:
 container_manager: Optional[ContainerManager] = None
 
 
-async def cleanup_task():
-    """Background task to clean up idle containers."""
-    logger.info(f"Starting cleanup task (runs every {CLEANUP_INTERVAL_SECONDS}s)")
-    while True:
-        await asyncio.sleep(CLEANUP_INTERVAL_SECONDS)
-        logger.debug("Running cleanup task")
-        try:
-            container_manager.cleanup_idle_containers()
-        except Exception as e:
-            logger.error(f"Error in cleanup task: {e}", exc_info=True)
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown."""
@@ -419,17 +382,12 @@ async def lifespan(app: FastAPI):
     for language in LANGUAGE_CONFIG.keys():
         container_manager.create_container(language)
 
-    # Start background cleanup task
-    cleanup_task_handle = asyncio.create_task(cleanup_task())
-    logger.info("Background cleanup task started")
-
     logger.info("FastAPI application startup complete")
 
     yield
 
     # Shutdown
     logger.info("Shutting down FastAPI application")
-    cleanup_task_handle.cancel()
     container_manager.cleanup_all()
     logger.info("FastAPI application shutdown complete")
 

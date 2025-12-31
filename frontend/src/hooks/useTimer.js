@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from "react";
 
 export const useTimer = () => {
   const [elapsedMs, setElapsedMs] = useState(0);

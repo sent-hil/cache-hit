@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { api } from '../utils/api';
+import { useState, useEffect } from "react";
+import { api } from "../utils/api";
 
-const API_URL = 'http://localhost:8000';
+const API_URL = "http://localhost:8000";
 
 export const useDeckState = (deckId) => {
   const [deck, setDeck] = useState(null);
@@ -10,7 +10,7 @@ export const useDeckState = (deckId) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [initialTotalCards, setInitialTotalCards] = useState(0);
-  const userId = 'user1'; // Hardcoded for now
+  const userId = "user1"; // Hardcoded for now
 
   const loadDeck = async () => {
     setLoading(true);
@@ -21,14 +21,16 @@ export const useDeckState = (deckId) => {
       setDeck(deckData);
 
       // Load cards due for review
-      const response = await fetch(`${API_URL}/api/review/due?user_id=${userId}&deck_id=${deckId}`);
+      const response = await fetch(
+        `${API_URL}/api/review/due?user_id=${userId}&deck_id=${deckId}`
+      );
       if (!response.ok) {
-        throw new Error('Failed to load due cards');
+        throw new Error("Failed to load due cards");
       }
       const dueData = await response.json();
 
       // Extract cards from the due cards response
-      const cards = dueData.cards.map(item => item.card);
+      const cards = dueData.cards.map((item) => item.card);
       setDueCards(cards);
       setCurrentCardIndex(0);
 
@@ -37,8 +39,8 @@ export const useDeckState = (deckId) => {
         setInitialTotalCards(cards.length);
       }
     } catch (err) {
-      console.error('Failed to load deck:', err);
-      setError(err.message || 'Failed to load deck');
+      console.error("Failed to load deck:", err);
+      setError(err.message || "Failed to load deck");
     } finally {
       setLoading(false);
     }
@@ -46,7 +48,7 @@ export const useDeckState = (deckId) => {
 
   useEffect(() => {
     if (!deckId) {
-      setError('No deck ID provided');
+      setError("No deck ID provided");
       setLoading(false);
       return;
     }
@@ -57,13 +59,13 @@ export const useDeckState = (deckId) => {
 
   const nextCard = () => {
     if (currentCardIndex < dueCards.length - 1) {
-      setCurrentCardIndex(prev => prev + 1);
+      setCurrentCardIndex((prev) => prev + 1);
     }
   };
 
   const previousCard = () => {
     if (currentCardIndex > 0) {
-      setCurrentCardIndex(prev => prev - 1);
+      setCurrentCardIndex((prev) => prev - 1);
     }
   };
 
@@ -83,7 +85,7 @@ export const useDeckState = (deckId) => {
     canGoPrevious,
     loading,
     error,
-    deckName: deck?.name || '',
+    deckName: deck?.name || "",
     reloadDeck: loadDeck,
   };
 };

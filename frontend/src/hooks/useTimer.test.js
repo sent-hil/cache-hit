@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useTimer } from './useTimer';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { renderHook, act } from "@testing-library/react";
+import { useTimer } from "./useTimer";
 
-describe('useTimer', () => {
+describe("useTimer", () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -11,14 +11,14 @@ describe('useTimer', () => {
     vi.restoreAllMocks();
   });
 
-  it('should initialize with zero elapsed time and not running', () => {
+  it("should initialize with zero elapsed time and not running", () => {
     const { result } = renderHook(() => useTimer());
 
     expect(result.current.elapsedMs).toBe(0);
     expect(result.current.isRunning).toBe(false);
   });
 
-  it('should start the timer', () => {
+  it("should start the timer", () => {
     const { result } = renderHook(() => useTimer());
 
     act(() => {
@@ -29,7 +29,7 @@ describe('useTimer', () => {
     expect(result.current.elapsedMs).toBe(0);
   });
 
-  it('should increment elapsed time when running', () => {
+  it("should increment elapsed time when running", () => {
     const { result } = renderHook(() => useTimer());
 
     act(() => {
@@ -43,7 +43,7 @@ describe('useTimer', () => {
     expect(result.current.elapsedMs).toBeGreaterThanOrEqual(400);
   });
 
-  it('should stop the timer', () => {
+  it("should stop the timer", () => {
     const { result } = renderHook(() => useTimer());
 
     act(() => {
@@ -69,7 +69,7 @@ describe('useTimer', () => {
     expect(result.current.elapsedMs).toBe(elapsedBeforeStop);
   });
 
-  it('should reset the timer', () => {
+  it("should reset the timer", () => {
     const { result } = renderHook(() => useTimer());
 
     act(() => {
@@ -90,14 +90,14 @@ describe('useTimer', () => {
     expect(result.current.isRunning).toBe(false);
   });
 
-  it('should clean up interval on unmount', () => {
+  it("should clean up interval on unmount", () => {
     const { result, unmount } = renderHook(() => useTimer());
 
     act(() => {
       result.current.start();
     });
 
-    const clearIntervalSpy = vi.spyOn(global, 'clearInterval');
+    const clearIntervalSpy = vi.spyOn(global, "clearInterval");
 
     unmount();
 

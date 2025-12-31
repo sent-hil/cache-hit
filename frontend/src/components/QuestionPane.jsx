@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
-import { RatingButtonsEnhanced } from './RatingButtonsEnhanced';
-import { useReview } from '../hooks/useReview';
-import katex from 'katex';
-import 'katex/dist/katex.min.css';
+import { useEffect } from "react";
+import { RatingButtonsEnhanced } from "./RatingButtonsEnhanced";
+import { useReview } from "../hooks/useReview";
+import katex from "katex";
+import "katex/dist/katex.min.css";
 
 const renderLatex = (text) => {
   // Render LaTeX expressions in text
@@ -13,7 +13,10 @@ const renderLatex = (text) => {
     // First handle display mode $$...$$
     result = result.replace(/\$\$([^\$]+)\$\$/g, (match, latex) => {
       try {
-        return katex.renderToString(latex.trim(), { displayMode: true, throwOnError: false });
+        return katex.renderToString(latex.trim(), {
+          displayMode: true,
+          throwOnError: false,
+        });
       } catch (e) {
         return match;
       }
@@ -22,7 +25,10 @@ const renderLatex = (text) => {
     // Then handle inline mode $...$
     result = result.replace(/\$([^\$]+)\$/g, (match, latex) => {
       try {
-        return katex.renderToString(latex.trim(), { displayMode: false, throwOnError: false });
+        return katex.renderToString(latex.trim(), {
+          displayMode: false,
+          throwOnError: false,
+        });
       } catch (e) {
         return match;
       }
@@ -36,29 +42,32 @@ const renderLatex = (text) => {
 
 const highlightPython = (code) => {
   let result = code
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 
   result = result
-    .replace(/(#.*)/g, '§§comment1§§$1§§comment2§§')
-    .replace(/\b(def|class|import|from|return|if|elif|else|for|while|in|range|len|print|with|as|try|except|finally|raise|pass|break|continue|yield|lambda|True|False|None)\b/g, '§§keyword1§§$1§§keyword2§§')
-    .replace(/\b([A-Z][a-zA-Z0-9_]*)\b/g, '§§classname1§§$1§§classname2§§')
+    .replace(/(#.*)/g, "§§comment1§§$1§§comment2§§")
+    .replace(
+      /\b(def|class|import|from|return|if|elif|else|for|while|in|range|len|print|with|as|try|except|finally|raise|pass|break|continue|yield|lambda|True|False|None)\b/g,
+      "§§keyword1§§$1§§keyword2§§"
+    )
+    .replace(/\b([A-Z][a-zA-Z0-9_]*)\b/g, "§§classname1§§$1§§classname2§§")
     .replace(/"([^"]*)"/g, '"§§string1§§$1§§string2§§"')
     .replace(/'([^']*)'/g, "'§§string1§§$1§§string2§§'")
-    .replace(/\b(\d+\.?\d*)\b/g, '§§number1§§$1§§number2§§');
+    .replace(/\b(\d+\.?\d*)\b/g, "§§number1§§$1§§number2§§");
 
   result = result
     .replace(/§§comment1§§/g, '<span class="syntax-c">')
-    .replace(/§§comment2§§/g, '</span>')
+    .replace(/§§comment2§§/g, "</span>")
     .replace(/§§keyword1§§/g, '<span class="syntax-k">')
-    .replace(/§§keyword2§§/g, '</span>')
+    .replace(/§§keyword2§§/g, "</span>")
     .replace(/§§classname1§§/g, '<span class="syntax-f">')
-    .replace(/§§classname2§§/g, '</span>')
+    .replace(/§§classname2§§/g, "</span>")
     .replace(/§§string1§§/g, '<span class="syntax-s">')
-    .replace(/§§string2§§/g, '</span>')
+    .replace(/§§string2§§/g, "</span>")
     .replace(/§§number1§§/g, '<span class="syntax-n">')
-    .replace(/§§number2§§/g, '</span>');
+    .replace(/§§number2§§/g, "</span>");
 
   return result;
 };
@@ -82,7 +91,7 @@ export const QuestionPane = ({
   reloadDeck,
 }) => {
   const { submitReview, submitting } = useReview();
-  const userId = 'user1';
+  const userId = "user1";
 
   useEffect(() => {
     if (!showAnswer) return;
@@ -94,8 +103,8 @@ export const QuestionPane = ({
       }
     };
 
-    window.addEventListener('keypress', handleKeyPress);
-    return () => window.removeEventListener('keypress', handleKeyPress);
+    window.addEventListener("keypress", handleKeyPress);
+    return () => window.removeEventListener("keypress", handleKeyPress);
   }, [showAnswer, card, currentSectionIndex]);
 
   const handleRate = async (rating) => {
@@ -104,17 +113,25 @@ export const QuestionPane = ({
     try {
       // Use card's actual deck_id if available (for "all" deck), otherwise use selected deckId
       const actualDeckId = card.deck_id || deckId;
-      console.log(`Submitting review for all ${totalSections} sections of card ${card.id} to deck ${actualDeckId}`);
+      console.log(
+        `Submitting review for all ${totalSections} sections of card ${card.id} to deck ${actualDeckId}`
+      );
       for (let i = 0; i < totalSections; i++) {
-        const result = await submitReview(userId, actualDeckId, card.id, i, rating);
+        const result = await submitReview(
+          userId,
+          actualDeckId,
+          card.id,
+          i,
+          rating
+        );
         console.log(`Section ${i} review submitted:`, result);
       }
 
       onHideAnswer();
       await reloadDeck();
     } catch (err) {
-      console.error('Failed to submit review:', err);
-      alert('Failed to submit review: ' + err.message);
+      console.error("Failed to submit review:", err);
+      alert("Failed to submit review: " + err.message);
     }
   };
   if (loading) {
@@ -148,168 +165,198 @@ export const QuestionPane = ({
   }
 
   // Determine if this is a programming card (has code)
-  const isProgrammingCard = card?.sections.some(section => section.answer_code && section.answer_code.trim() !== '') || false;
+  const isProgrammingCard =
+    card?.sections.some(
+      (section) => section.answer_code && section.answer_code.trim() !== ""
+    ) || false;
 
   return (
-    <section className={`w-full h-full flex flex-col ${isProgrammingCard ? 'border-r border-border' : ''} bg-surface relative`}>
+    <section
+      className={`w-full h-full flex flex-col ${
+        isProgrammingCard ? "border-r border-border" : ""
+      } bg-surface relative`}
+    >
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         <div className="max-w-4xl w-full mx-auto py-8 px-6 flex flex-col gap-8 pb-6">
-        <div className="flex items-center bg-surface-subtle border border-border p-3">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center size-8 bg-accent/10 border border-accent/20 text-accent">
-              <span className="material-symbols-outlined text-[18px]">layers</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] text-content-muted uppercase tracking-widest font-bold">
-                Current Section
-              </span>
-              <span className="text-sm font-bold text-white tracking-wide font-display">
-                SECTION {currentSectionIndex + 1}{' '}
-                <span className="text-content-muted font-normal">/ {totalSections}</span>
-              </span>
+          <div className="flex items-center bg-surface-subtle border border-border p-3">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center size-8 bg-accent/10 border border-accent/20 text-accent">
+                <span className="material-symbols-outlined text-[18px]">
+                  layers
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] text-content-muted uppercase tracking-widest font-bold">
+                  Current Section
+                </span>
+                <span className="text-sm font-bold text-white tracking-wide font-display">
+                  SECTION {currentSectionIndex + 1}{" "}
+                  <span className="text-content-muted font-normal">
+                    / {totalSections}
+                  </span>
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex flex-col relative">
-          <div className="absolute left-[11px] top-8 bottom-12 w-px bg-border"></div>
+          <div className="flex flex-col relative">
+            <div className="absolute left-[11px] top-8 bottom-12 w-px bg-border"></div>
 
-          {card.sections.map((section, index) => {
-            const isActive = index === currentSectionIndex;
+            {card.sections.map((section, index) => {
+              const isActive = index === currentSectionIndex;
 
-            return (
-              <div
-                key={index}
-                className={`flex gap-5 relative mb-12 ${
-                  isActive ? '' : 'opacity-60 hover:opacity-100 transition-opacity'
-                } group`}
-              >
-                <div className="shrink-0 z-10">
-                  {isActive ? (
-                    <div className="size-6 bg-primary text-surface font-bold font-mono text-xs flex items-center justify-center rounded-sm shadow-[0_0_10px_rgba(88,166,255,0.4)] ring-4 ring-surface">
-                      {index + 1}
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => onGoToSection(index)}
-                      className="size-6 bg-surface-panel border border-border text-content-muted hover:text-white hover:border-white font-bold font-mono text-xs flex items-center justify-center rounded-sm ring-4 ring-surface transition-colors cursor-pointer"
-                    >
-                      {index + 1}
-                    </button>
-                  )}
-                </div>
-
-                <div className="flex flex-col gap-6 flex-1 min-w-0">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h1
-                        className={`text-2xl font-bold tracking-tight font-mono ${
-                          isActive
-                            ? 'text-white'
-                            : 'text-content-muted group-hover:text-white transition-colors cursor-pointer'
-                        }`}
-                        onClick={() => !isActive && onGoToSection(index)}
+              return (
+                <div
+                  key={index}
+                  className={`flex gap-5 relative mb-12 ${
+                    isActive
+                      ? ""
+                      : "opacity-60 hover:opacity-100 transition-opacity"
+                  } group`}
+                >
+                  <div className="shrink-0 z-10">
+                    {isActive ? (
+                      <div className="size-6 bg-primary text-surface font-bold font-mono text-xs flex items-center justify-center rounded-sm shadow-[0_0_10px_rgba(88,166,255,0.4)] ring-4 ring-surface">
+                        {index + 1}
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => onGoToSection(index)}
+                        className="size-6 bg-surface-panel border border-border text-content-muted hover:text-white hover:border-white font-bold font-mono text-xs flex items-center justify-center rounded-sm ring-4 ring-surface transition-colors cursor-pointer"
                       >
-                        {index === 0 ? card.title : section.question.split('\n')[0]}
-                      </h1>
-                      {isActive && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="flex size-2 relative">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                          </span>
-                          <span className="text-[10px] text-primary uppercase tracking-wider font-bold">
-                            Active Question
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                        {index + 1}
+                      </button>
+                    )}
                   </div>
 
-                  {isActive && section.question.includes('```') && (
-                    <div className="flex flex-col gap-2">
-                      <div className="border border-border bg-surface-panel p-4 overflow-x-auto relative">
-                        <div className="absolute top-0 left-0 w-1 h-full bg-border"></div>
-                        <pre
-                          className="font-mono text-sm leading-relaxed"
-                          dangerouslySetInnerHTML={{
-                            __html: highlightPython(
-                              section.question.split('```')[1]?.replace(/^python\n/, '').replace(/^\n/, '') || ''
-                            )
-                          }}
-                        />
+                  <div className="flex flex-col gap-6 flex-1 min-w-0">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h1
+                          className={`text-2xl font-bold tracking-tight font-mono ${
+                            isActive
+                              ? "text-white"
+                              : "text-content-muted group-hover:text-white transition-colors cursor-pointer"
+                          }`}
+                          onClick={() => !isActive && onGoToSection(index)}
+                        >
+                          {index === 0
+                            ? card.title
+                            : section.question.split("\n")[0]}
+                        </h1>
+                        {isActive && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="flex size-2 relative">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                            </span>
+                            <span className="text-[10px] text-primary uppercase tracking-wider font-bold">
+                              Active Question
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  )}
 
-                  {isActive && !isProgrammingCard && showAnswer && section.answer_text && (
-                    <div className="flex flex-col gap-3 mt-6">
-                      <div className="flex justify-between items-baseline border-b border-border pb-1 mb-1">
-                        <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">// ANSWER</span>
-                      </div>
-                      <div className="border border-secondary/30 bg-secondary/5 p-6 overflow-x-auto">
-                        <div
-                          className="text-lg text-content leading-relaxed font-sans whitespace-pre-wrap"
-                          dangerouslySetInnerHTML={{ __html: renderLatex(section.answer_text) }}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {isActive && (
-                    <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-border/50 border-dashed">
-                      {currentSectionIndex > 0 && (
-                        <button
-                          onClick={() => onGoToSection(currentSectionIndex - 1)}
-                          className="px-4 py-2 bg-surface-subtle hover:bg-surface-panel text-content text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 border border-border hover:border-accent shadow-sm group"
-                        >
-                          <span className="material-symbols-outlined text-[16px] text-accent transition-colors">
-                            arrow_upward
-                          </span>
-                          <span>Prev Section</span>
-                        </button>
-                      )}
-                      {canGoNextSection && (
-                        <button
-                          onClick={onNextSection}
-                          className="px-4 py-2 bg-surface-subtle hover:bg-surface-panel text-content text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 border border-border hover:border-accent shadow-sm group"
-                        >
-                          <span className="material-symbols-outlined text-[16px] text-accent transition-colors">
-                            arrow_downward
-                          </span>
-                          <span>Next Section</span>
-                        </button>
-                      )}
-                      {!showAnswer ? (
-                        <button
-                          onClick={onShowAnswer}
-                          className="group relative px-6 py-2 bg-primary hover:bg-[#4b96ef] text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 border border-primary hover:border-[#8ec2ff] shadow-sm ml-auto"
-                        >
-                          <span className="material-symbols-outlined text-[16px]">visibility</span>
-                          Show Answer
-                        </button>
-                      ) : (
-                        currentSectionIndex !== totalSections - 1 && (
-                          <button
-                            onClick={() => {
-                              onHideAnswer();
-                              onNextSection();
+                    {isActive && section.question.includes("```") && (
+                      <div className="flex flex-col gap-2">
+                        <div className="border border-border bg-surface-panel p-4 overflow-x-auto relative">
+                          <div className="absolute top-0 left-0 w-1 h-full bg-border"></div>
+                          <pre
+                            className="font-mono text-sm leading-relaxed"
+                            dangerouslySetInnerHTML={{
+                              __html: highlightPython(
+                                section.question
+                                  .split("```")[1]
+                                  ?.replace(/^python\n/, "")
+                                  .replace(/^\n/, "") || ""
+                              ),
                             }}
-                            className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 border border-green-500 hover:border-green-400 shadow-sm ml-auto"
-                          >
-                            <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                            Continue
-                          </button>
-                        )
-                      )}
-                    </div>
-                  )}
+                          />
+                        </div>
+                      </div>
+                    )}
 
+                    {isActive &&
+                      !isProgrammingCard &&
+                      showAnswer &&
+                      section.answer_text && (
+                        <div className="flex flex-col gap-3 mt-6">
+                          <div className="flex justify-between items-baseline border-b border-border pb-1 mb-1">
+                            <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">
+                              // ANSWER
+                            </span>
+                          </div>
+                          <div className="border border-secondary/30 bg-secondary/5 p-6 overflow-x-auto">
+                            <div
+                              className="text-lg text-content leading-relaxed font-sans whitespace-pre-wrap"
+                              dangerouslySetInnerHTML={{
+                                __html: renderLatex(section.answer_text),
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                    {isActive && (
+                      <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-border/50 border-dashed">
+                        {currentSectionIndex > 0 && (
+                          <button
+                            onClick={() =>
+                              onGoToSection(currentSectionIndex - 1)
+                            }
+                            className="px-4 py-2 bg-surface-subtle hover:bg-surface-panel text-content text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 border border-border hover:border-accent shadow-sm group"
+                          >
+                            <span className="material-symbols-outlined text-[16px] text-accent transition-colors">
+                              arrow_upward
+                            </span>
+                            <span>Prev Section</span>
+                          </button>
+                        )}
+                        {canGoNextSection && (
+                          <button
+                            onClick={onNextSection}
+                            className="px-4 py-2 bg-surface-subtle hover:bg-surface-panel text-content text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 border border-border hover:border-accent shadow-sm group"
+                          >
+                            <span className="material-symbols-outlined text-[16px] text-accent transition-colors">
+                              arrow_downward
+                            </span>
+                            <span>Next Section</span>
+                          </button>
+                        )}
+                        {!showAnswer ? (
+                          <button
+                            onClick={onShowAnswer}
+                            className="group relative px-6 py-2 bg-primary hover:bg-[#4b96ef] text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 border border-primary hover:border-[#8ec2ff] shadow-sm ml-auto"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">
+                              visibility
+                            </span>
+                            Show Answer
+                          </button>
+                        ) : (
+                          currentSectionIndex !== totalSections - 1 && (
+                            <button
+                              onClick={() => {
+                                onHideAnswer();
+                                onNextSection();
+                              }}
+                              className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 border border-green-500 hover:border-green-400 shadow-sm ml-auto"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">
+                                arrow_forward
+                              </span>
+                              Continue
+                            </button>
+                          )
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 

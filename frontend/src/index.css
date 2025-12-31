@@ -1,5 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -7,7 +7,7 @@
 
 /* Material Symbols Icons */
 .material-symbols-outlined {
-  font-family: 'Material Symbols Outlined';
+  font-family: "Material Symbols Outlined";
   font-weight: normal;
   font-style: normal;
   font-size: 24px;
@@ -18,17 +18,30 @@
   white-space: nowrap;
   word-wrap: normal;
   direction: ltr;
-  -webkit-font-feature-settings: 'liga';
+  -webkit-font-feature-settings: "liga";
   -webkit-font-smoothing: antialiased;
 }
 
 /* Syntax highlighting colors */
-.syntax-k { color: #ff7b72; } /* Keyword */
-.syntax-f { color: #d2a8ff; } /* Function */
-.syntax-s { color: #a5d6ff; } /* String */
-.syntax-c { color: #8b949e; font-style: italic; } /* Comment */
-.syntax-v { color: #79c0ff; } /* Variable */
-.syntax-n { color: #c9d1d9; } /* Number */
+.syntax-k {
+  color: #ff7b72;
+} /* Keyword */
+.syntax-f {
+  color: #d2a8ff;
+} /* Function */
+.syntax-s {
+  color: #a5d6ff;
+} /* String */
+.syntax-c {
+  color: #8b949e;
+  font-style: italic;
+} /* Comment */
+.syntax-v {
+  color: #79c0ff;
+} /* Variable */
+.syntax-n {
+  color: #c9d1d9;
+} /* Number */
 
 @layer base {
   * {
@@ -38,7 +51,7 @@
   body {
     margin: 0;
     padding: 0;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: "JetBrains Mono", monospace;
     background-color: #0d1117;
     color: #c9d1d9;
     -webkit-font-smoothing: antialiased;
@@ -79,7 +92,7 @@
 
 /* Output pre styling */
 .output-content {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: 13px;
   line-height: 1.5;
   padding: 1rem;

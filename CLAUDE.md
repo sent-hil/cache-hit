@@ -5,18 +5,24 @@ This document contains project-specific guidelines and best practices for Claude
 ## Rules Summary
 
 ### 1. Meta - Maintaining This Document
+
 See all rules in section **## META - MAINTAINING THIS DOCUMENT**
+
 1. When adding new rules to detailed sections below, always update this summary section with a corresponding one-sentence summary
 2. Each rule in this summary must reference its corresponding detailed section
 3. Follow the writing guidelines when adding new rules
 
 ### 2. Code Organization
+
 See all rules in section **## CODE ORGANIZATION**
+
 1. Always place imports at the top of the file, never inside functions
 2. [Add your rules here]
 
 ### 3. Testing
+
 See all rules in section **## TESTING**
+
 1. Always use `patch.object` rather than `patch` for mocking
 2. Never use magic numbers or string literals in tests - extract constants
 3. Always check for existing test helpers before creating new ones
@@ -31,6 +37,7 @@ See all rules in section **## TESTING**
 **Rule**: Whenever you add, modify, or remove rules in the detailed sections below, you MUST update the "Rules Summary" section at the top of this document.
 
 **Process**:
+
 1. Add the new rule to the appropriate detailed section below
 2. Add a corresponding one-sentence summary to the Rules Summary section
 3. Ensure the summary references the detailed section using the format: "See all rules in section **## SECTION NAME**"
@@ -38,6 +45,7 @@ See all rules in section **## TESTING**
 
 **Example**:
 If you add a new rule about async patterns in the detailed "ASYNC PATTERNS" section, you must add:
+
 - A new topic in Rules Summary: "4. Async Patterns - See all rules in section **## ASYNC PATTERNS**"
 - A one-sentence summary under that topic
 
@@ -46,6 +54,7 @@ If you add a new rule about async patterns in the detailed "ASYNC PATTERNS" sect
 When adding new rules to this document, follow these principles:
 
 **Core Principles (Always Apply):**
+
 1. **Use absolute directives** - Start with "NEVER" or "ALWAYS" for non-negotiable rules
 2. **Lead with why** - Explain the problem/rationale before showing the solution (1-3 bullets max)
 3. **Be concrete** - Include actual commands/code for project-specific patterns
@@ -54,6 +63,7 @@ When adding new rules to this document, follow these principles:
 6. **Action before theory** - Put immediate takeaways first
 
 **Optional Enhancements (Use Strategically):**
+
 - **❌/✅ examples**: Only when the antipattern is subtle or common
 - **"Why" or "Rationale" section**: Keep to 1-3 bullets explaining the underlying reason
 - **"Warning Signs" section**: Only for gradual/easy-to-miss violations
@@ -61,6 +71,7 @@ When adding new rules to this document, follow these principles:
 - **Decision trees**: Only for 3+ factor decisions with multiple considerations
 
 **Anti-Bloat Rules:**
+
 - ❌ Don't add "Warning Signs" to obvious rules (e.g., "imports at top")
 - ❌ Don't show bad examples for trivial mistakes
 - ❌ Don't create decision trees for simple binary choices
@@ -77,6 +88,7 @@ We use ty for gradual type checking adoption.
 ### General Principles
 
 1. **Minimize Logic Changes**: Type checking should NOT change runtime behavior. When adding type hints:
+
    - Keep original logic intact
    - Use `# type: ignore` comments when necessary
    - Only fix actual type errors, not "improvements"
@@ -86,7 +98,6 @@ We use ty for gradual type checking adoption.
    uv run ty check  # Type checking
    uv run pytest tests/  # Full test suite
    ```
-
 
 ## CODE ORGANIZATION
 
@@ -116,6 +127,7 @@ def test_something():
 **`@lru_cache` on zero-argument functions creates singletons that are populated at startup.**
 
 **Pattern**:
+
 ```python
 # In another file (e.g., deck_router.py)
 @lru_cache
@@ -134,6 +146,7 @@ async def list_decks(cache: Dict[str, Deck] = Depends(get_deck_cache)):
 ```
 
 **What this is NOT**:
+
 - ❌ NOT a cache in the "memoization" sense
 - ❌ NOT creating a new instance per request
 - ✅ IS a way to create a shared singleton that lives for the app lifetime
@@ -186,11 +199,13 @@ def test_timeout():
 ```
 
 **Why It's Wrong**:
+
 - Tests become brittle when constants change
 - Unclear where values come from
 - Obscures relationships between values
 
 **Rules**:
+
 1. Import constants from source code when possible
 2. Define test-specific constants at module level
 3. Calculate derived values explicitly to show relationships
@@ -206,6 +221,7 @@ grep -r "def create_test" tests/ --include="*.py"
 ```
 
 **Decision Tree**:
+
 1. Helper exists and fits your needs? → Use it
 2. Helper exists but needs extension? → Extend it with optional parameters
 3. Helper doesn't exist? → Create it in the appropriate location
@@ -247,6 +263,7 @@ def test_staleness_logging(mock_log_staleness):
 ```
 
 **Why It's Wrong to Mock Infrastructure**:
+
 - **Tests implementation, not behavior**: Testing "did we call logger.warning" instead of actual functionality
 - **Brittle and coupled**: Changes to logging don't represent functionality changes
 - **Infrastructure is everywhere**: Logger used across all files - patching it is fragile
@@ -257,6 +274,7 @@ def test_staleness_logging(mock_log_staleness):
 If you find yourself patching widely-used capabilities (logger, datetime, random, database clients), ask: **"Is there a helper/wrapper I should create instead?"**
 
 **Benefits of Helper Functions**:
+
 - Tests verify business logic, not infrastructure calls
 - Helper is reusable across the codebase
 - Refactoring implementation doesn't break tests
@@ -311,6 +329,7 @@ tests/
 ### pytest Best Practices
 
 #### Async Tests
+
 ```python
 # ✅ CORRECT
 @pytest.mark.asyncio
@@ -320,6 +339,7 @@ async def test_async_function():
 ```
 
 #### Parametrized Tests
+
 ```python
 # ✅ CORRECT - Test multiple cases efficiently
 @pytest.mark.parametrize("input_val,expected", [
@@ -332,6 +352,7 @@ def test_doubling(input_val, expected):
 ```
 
 #### Test Naming
+
 ```python
 # ✅ CORRECT - Descriptive test names
 def test_latest_per_user_returns_newest_result_per_user():
@@ -351,6 +372,7 @@ def test_policy():
 ## TESTING - SUMMARY CHECKLIST
 
 Before committing tests, verify:
+
 - [ ] All imports are at the top of the file
 - [ ] Using `patch.object` instead of `patch`
 - [ ] No mocking of common infrastructure (using testable wrappers instead)

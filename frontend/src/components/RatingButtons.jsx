@@ -2,27 +2,31 @@ export const RatingButtons = ({ onRate, disabled = false }) => {
   const buttons = [
     {
       rating: 1,
-      label: 'Again',
-      key: '1',
-      className: 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/30 hover:border-red-400',
+      label: "Again",
+      key: "1",
+      className:
+        "bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/30 hover:border-red-400",
     },
     {
       rating: 2,
-      label: 'Hard',
-      key: '2',
-      className: 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border-orange-500/30 hover:border-orange-400',
+      label: "Hard",
+      key: "2",
+      className:
+        "bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border-orange-500/30 hover:border-orange-400",
     },
     {
       rating: 3,
-      label: 'Good',
-      key: '3',
-      className: 'bg-green-500/10 hover:bg-green-500/20 text-green-400 border-green-500/30 hover:border-green-400',
+      label: "Good",
+      key: "3",
+      className:
+        "bg-green-500/10 hover:bg-green-500/20 text-green-400 border-green-500/30 hover:border-green-400",
     },
     {
       rating: 4,
-      label: 'Easy',
-      key: '4',
-      className: 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border-blue-500/30 hover:border-blue-400',
+      label: "Easy",
+      key: "4",
+      className:
+        "bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border-blue-500/30 hover:border-blue-400",
     },
   ];
 

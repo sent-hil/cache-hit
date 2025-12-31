@@ -1,11 +1,13 @@
 # Code Runner API Specification
 
 ## Overview
+
 A FastAPI-based code execution sandbox for a spaced repetition learning app. Executes user code from Monaco editor in isolated Docker containers and returns results. Built for local personal use on developer's laptop.
 
 ## Architecture
 
 ### Container Strategy
+
 - **One container per language**: Single long-lived container per supported language (Python, Ruby)
 - **Stateless sharing**: All execution requests share the same language container
 - **30-minute TTL**: Containers auto-cleanup after 30 minutes of inactivity
@@ -14,6 +16,7 @@ A FastAPI-based code execution sandbox for a spaced repetition learning app. Exe
 - **Parallel execution safe**: UUID filenames allow concurrent requests to same container
 
 ### Execution Flow
+
 1. Client sends code string to language-specific endpoint
 2. Server generates UUID, writes code to `/tmp/exec_<uuid>.<ext>` in container using `put_archive()`
 3. Execute using `exec_run()` with 10-second timeout
@@ -25,9 +28,11 @@ A FastAPI-based code execution sandbox for a spaced repetition learning app. Exe
 ## API Endpoints
 
 ### POST /execute/python
+
 Execute Python code in python:3.10-slim container.
 
 **Request Body:**
+
 ```json
 {
   "code": "print('Hello, world!')"
@@ -35,6 +40,7 @@ Execute Python code in python:3.10-slim container.
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "stdout": "Hello, world!\n",
@@ -51,6 +57,7 @@ Execute Python code in python:3.10-slim container.
 ```
 
 **Error Response (500):**
+
 ```json
 {
   "detail": "Docker API error: container not responding",
@@ -61,9 +68,11 @@ Execute Python code in python:3.10-slim container.
 ```
 
 ### POST /execute/ruby
+
 Execute Ruby code in ruby:3.2-slim container.
 
 **Request Body:**
+
 ```json
 {
   "code": "puts 'Hello from Ruby'"
@@ -73,9 +82,11 @@ Execute Ruby code in ruby:3.2-slim container.
 **Response format:** Same as Python endpoint, with `language: "ruby"` and `.rb` file extension.
 
 ### GET /health
+
 Check server and container status.
 
 **Response (200):**
+
 ```json
 {
   "status": "ok",
@@ -88,6 +99,7 @@ Check server and container status.
 ```
 
 **Response when container stopped (200):**
+
 ```json
 {
   "status": "degraded",
@@ -102,6 +114,7 @@ Check server and container status.
 ## Configuration
 
 ### Server Settings
+
 - **Port**: 8000 (default FastAPI)
 - **Host**: 0.0.0.0 (accessible from frontend)
 - **CORS Origins**: `["http://localhost:3000"]`
@@ -109,6 +122,7 @@ Check server and container status.
 - **Log Level**: DEBUG (verbose logging for development)
 
 ### Container Settings
+
 - **CPU Limit**: 0.5 cores per container
 - **Memory Limit**: 256MB per container
 - **Network**: Disabled (isolated containers, no internet access)
@@ -117,6 +131,7 @@ Check server and container status.
 - **Output Limit**: 10KB (truncate stdout/stderr if exceeded)
 
 ### Images
+
 ```python
 LANGUAGE_CONFIG = {
     "python": {
@@ -133,7 +148,9 @@ LANGUAGE_CONFIG = {
 ```
 
 ### Container Naming
+
 Format: `code-runner-{language}-{random_suffix}`
+
 - Example: `code-runner-python-a3f9`, `code-runner-ruby-7b2c`
 - Random suffix: 4 random hex characters
 - Prevents name collisions on restart
@@ -141,6 +158,7 @@ Format: `code-runner-{language}-{random_suffix}`
 ## Container Lifecycle
 
 ### Startup (Server Launch)
+
 1. Check Docker daemon is running (fail fast if not)
 2. Pull images if not present (blocking operation)
 3. Create containers with resource limits and no network
@@ -148,18 +166,21 @@ Format: `code-runner-{language}-{random_suffix}`
 5. Ready to accept requests
 
 ### Runtime
+
 - Containers stay running continuously
 - Track `last_used_timestamp` per container
 - Update timestamp on each execution request
 - Allow parallel execution (UUID files prevent collisions)
 
 ### Cleanup (After 30min Idle)
+
 1. Background task detects container idle >30 minutes
 2. Call `container.kill()` (immediate SIGKILL, no grace period)
 3. Remove container with `container.remove(force=True)`
 4. Container auto-recreates on next request for that language
 
 ### Shutdown (Server Stop)
+
 1. Kill all managed containers immediately
 2. Remove containers to clean up resources
 3. Exit server
@@ -167,7 +188,9 @@ Format: `code-runner-{language}-{random_suffix}`
 ## Error Handling
 
 ### Classification
+
 - **User Code Errors**: Syntax errors, runtime exceptions, timeouts
+
   - Return in stdout/stderr as normal (exit_code non-zero)
   - HTTP 200 status (execution completed, just with errors)
 
@@ -176,11 +199,13 @@ Format: `code-runner-{language}-{random_suffix}`
   - Include error details in response body
 
 ### Timeout Behavior
+
 - 10-second execution limit enforced by Docker exec_run timeout
 - On timeout: kill execution, return partial output + timeout message
 - Exit code: 124 (standard timeout exit code)
 
 ### Output Truncation
+
 - If stdout or stderr exceeds 10KB, truncate with message:
   ```
   [Output truncated at 10KB limit]
@@ -189,17 +214,20 @@ Format: `code-runner-{language}-{random_suffix}`
 ## Security Considerations
 
 ### Local-Only Use
+
 - No authentication required (personal laptop)
 - No user isolation (single user)
 - Trusted code source (user's own spaced repetition cards)
 
 ### Container Isolation
+
 - **No network**: Prevents outbound connections, package installation
 - **Resource limits**: CPU/memory caps prevent resource exhaustion
 - **Minimal images**: Official slim images reduce attack surface
 - **Read-only root**: (Optional enhancement) Mount root filesystem read-only
 
 ### Input Validation
+
 - **No syntax validation**: Trust container to handle all code
 - **Size limit**: 100KB request body limit in FastAPI
 - **No content filtering**: Allow any code (local trusted use)
@@ -207,15 +235,18 @@ Format: `code-runner-{language}-{random_suffix}`
 ## Performance Characteristics
 
 ### First Request (Cold Start)
+
 - Server startup: ~5-10 seconds (pull images, create containers)
 - After startup: <100ms per request (warm containers)
 
 ### Subsequent Requests
+
 - Container already running: ~50-200ms execution overhead
 - Actual execution time depends on user code
 - Parallel requests supported via UUID isolation
 
 ### Resource Usage
+
 - Idle server: ~50MB RAM (FastAPI process)
 - Per container: ~256MB RAM limit (actual usage lower when idle)
 - Two containers: ~512MB total container memory allocated
@@ -224,6 +255,7 @@ Format: `code-runner-{language}-{random_suffix}`
 ## Development Notes
 
 ### Dependencies
+
 ```toml
 [project]
 dependencies = [
@@ -235,6 +267,7 @@ dependencies = [
 ```
 
 ### Running Locally
+
 ```bash
 # Install dependencies
 uv sync
@@ -246,6 +279,7 @@ uvicorn main:app --reload --port 8000
 ```
 
 ### Docker Requirements
+
 - Docker daemon must be running
 - User must have permissions to create/manage containers
 - Images will auto-pull on first startup (requires internet)
@@ -253,19 +287,23 @@ uvicorn main:app --reload --port 8000
 ### Future Extensibility
 
 #### LSP Integration (Planned)
+
 - Architecture supports future Language Server Protocol integration
 - Would enable autocomplete, hover docs, go-to-definition
 - Separate endpoint `/lsp/<language>` for language server features
 - Not implemented in MVP
 
 #### Additional Languages
+
 To add new language:
+
 1. Add entry to `LANGUAGE_CONFIG` dict
 2. Specify Docker image, file extension, run command
 3. Container auto-created on server startup
 4. Endpoint auto-registered at `/execute/<language>`
 
 Example for JavaScript:
+
 ```python
 "javascript": {
     "image": "node:20-slim",
@@ -277,6 +315,7 @@ Example for JavaScript:
 ## Implementation Checklist
 
 ### Core Features
+
 - [ ] FastAPI app with CORS middleware (localhost:3000)
 - [ ] Docker SDK integration
 - [ ] Container manager class (create, execute, cleanup)
@@ -287,6 +326,7 @@ Example for JavaScript:
 - [ ] Output size limit (10KB truncation)
 
 ### Container Management
+
 - [ ] Pre-start containers on server boot
 - [ ] Fail fast if Docker unavailable
 - [ ] UUID-based file naming
@@ -297,6 +337,7 @@ Example for JavaScript:
 - [ ] Immediate kill (SIGKILL) on cleanup
 
 ### Response Metrics
+
 - [ ] Capture stdout/stderr/exit_code
 - [ ] Measure execution time (milliseconds)
 - [ ] Extract container_id, image_name
@@ -305,6 +346,7 @@ Example for JavaScript:
 - [ ] Return file_path used for execution
 
 ### Logging
+
 - [ ] DEBUG level logging throughout
 - [ ] Log container lifecycle events
 - [ ] Log execution requests with timing
@@ -312,6 +354,7 @@ Example for JavaScript:
 - [ ] Log Docker API errors with full context
 
 ### Error Handling
+
 - [ ] 200 for successful execution (even with code errors)
 - [ ] 500 for Docker API failures
 - [ ] Graceful timeout handling
@@ -321,6 +364,7 @@ Example for JavaScript:
 ## Testing Strategy
 
 ### Manual Testing
+
 1. Start server, verify containers created
 2. Execute simple Python/Ruby code, verify output
 3. Execute code with stderr output (errors)
@@ -331,6 +375,7 @@ Example for JavaScript:
 8. Check /health endpoint before/after cleanup
 
 ### Edge Cases
+
 - Empty code string (should execute successfully, no output)
 - Code with infinite loop (should timeout at 10s)
 - Code trying network access (should fail, no network)
@@ -341,26 +386,28 @@ Example for JavaScript:
 ## Example Usage
 
 ### Frontend Integration (TypeScript/React)
+
 ```typescript
-async function executeCode(code: string, language: 'python' | 'ruby') {
+async function executeCode(code: string, language: "python" | "ruby") {
   const response = await fetch(`http://localhost:8000/execute/${language}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code })
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code }),
   });
 
   const result = await response.json();
 
   // Display stdout/stderr in Monaco output panel
-  console.log('Output:', result.stdout);
-  console.log('Errors:', result.stderr);
-  console.log('Executed in:', result.execution_time_ms, 'ms');
+  console.log("Output:", result.stdout);
+  console.log("Errors:", result.stderr);
+  console.log("Executed in:", result.execution_time_ms, "ms");
 
   return result;
 }
 ```
 
 ### Example Python Code Execution
+
 ```python
 # User types this in Monaco editor:
 numbers = [1, 2, 3, 4, 5]
@@ -383,6 +430,7 @@ print(f"Sum: {total}")
 ```
 
 ### Example Ruby Code with Error
+
 ```ruby
 # User types this in Monaco editor:
 puts "Hello"
@@ -407,30 +455,35 @@ puts "This won't print"
 ## Architecture Decisions Record
 
 ### Why one container per language (not per-user/per-session)?
+
 - **Local single-user**: Only developer uses this, no need for user isolation
 - **Simplicity**: Fewer containers to manage, simpler lifecycle
 - **Performance**: Containers stay warm, fast execution (<100ms overhead)
 - **Cost**: Minimal resource usage on laptop (2 containers total)
 
 ### Why UUID files instead of locking?
+
 - **Parallel execution**: Multiple requests can run simultaneously
 - **No blocking**: Frontend doesn't wait for other executions
 - **Simple cleanup**: Files removed on container shutdown, not per-execution
 - **Collision-free**: UUIDv4 provides sufficient uniqueness
 
 ### Why no validation?
+
 - **Container isolation**: Let runtime handle all errors safely
 - **Educational value**: Students see real error messages
 - **Simplicity**: No language-specific parsing/validation logic
 - **Trust model**: Local use, trusted code source
 
 ### Why immediate kill vs graceful stop?
+
 - **Deterministic**: SIGKILL always works immediately
 - **No state**: Containers have no important state to save
 - **Fast cleanup**: Don't wait for graceful shutdown
 - **Simple**: Single API call, no timeout handling
 
 ### Why pre-start containers?
+
 - **Fast first request**: No cold start delay
 - **Fail fast**: Know about Docker issues at startup
 - **Simple**: No concurrent creation handling needed

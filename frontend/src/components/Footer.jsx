@@ -1,4 +1,9 @@
-export const Footer = ({ onSkipCard, onPreviousCard, canGoNext, canGoPrevious }) => {
+export const Footer = ({
+  onSkipCard,
+  onPreviousCard,
+  canGoNext,
+  canGoPrevious,
+}) => {
   return (
     <footer className="h-14 border-t border-border bg-surface-panel shrink-0 z-20">
       <div className="h-full px-6 flex items-center justify-between">
@@ -25,8 +30,8 @@ export const Footer = ({ onSkipCard, onPreviousCard, canGoNext, canGoPrevious })
             disabled={!canGoNext}
             className={`px-4 py-2 text-xs font-bold border border-transparent transition-colors uppercase tracking-wider ${
               canGoNext
-                ? 'text-content-muted hover:text-content hover:border-border'
-                : 'text-content-muted opacity-50 cursor-not-allowed'
+                ? "text-content-muted hover:text-content hover:border-border"
+                : "text-content-muted opacity-50 cursor-not-allowed"
             }`}
           >
             Next Card

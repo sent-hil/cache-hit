@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from "react";
 
 export const SplitPane = ({
   children,
-  direction = 'vertical',
+  direction = "vertical",
   initialPosition = 50,
   topChildren,
   bottomChildren,
@@ -11,7 +11,7 @@ export const SplitPane = ({
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
 
-  const isHorizontal = direction === 'horizontal';
+  const isHorizontal = direction === "horizontal";
   const MIN_SIZE = isHorizontal ? 30 : 20;
 
   const [firstChild, secondChild] = children || [topChildren, bottomChildren];
@@ -19,7 +19,7 @@ export const SplitPane = ({
   const handleMouseDown = (e) => {
     e.preventDefault();
     setIsDragging(true);
-    document.body.classList.add('dragging');
+    document.body.classList.add("dragging");
   };
 
   const handleMouseMove = (e) => {
@@ -32,13 +32,16 @@ export const SplitPane = ({
       ? ((e.clientX - containerRect.left) / containerRect.width) * 100
       : ((e.clientY - containerRect.top) / containerRect.height) * 100;
 
-    const clampedPosition = Math.max(MIN_SIZE, Math.min(100 - MIN_SIZE, newPosition));
+    const clampedPosition = Math.max(
+      MIN_SIZE,
+      Math.min(100 - MIN_SIZE, newPosition)
+    );
     setSplitPosition(clampedPosition);
   };
 
   const handleMouseUp = () => {
     setIsDragging(false);
-    document.body.classList.remove('dragging');
+    document.body.classList.remove("dragging");
   };
 
   const handleDoubleClick = () => {
@@ -47,20 +50,20 @@ export const SplitPane = ({
 
   useEffect(() => {
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
 
       return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
       };
     }
   }, [isDragging]);
 
-  const containerClass = isHorizontal ? 'flex flex-row' : 'flex flex-col';
+  const containerClass = isHorizontal ? "flex flex-row" : "flex flex-col";
   const dividerClass = isHorizontal
-    ? 'split-divider-horizontal'
-    : 'split-divider';
+    ? "split-divider-horizontal"
+    : "split-divider";
   const firstPaneStyle = isHorizontal
     ? { width: `${splitPosition}%` }
     : { height: `${splitPosition}%` };
@@ -70,10 +73,7 @@ export const SplitPane = ({
 
   return (
     <div ref={containerRef} className={`h-full w-full ${containerClass}`}>
-      <div
-        className="overflow-hidden"
-        style={firstPaneStyle}
-      >
+      <div className="overflow-hidden" style={firstPaneStyle}>
         {firstChild}
       </div>
 
@@ -83,10 +83,7 @@ export const SplitPane = ({
         onDoubleClick={handleDoubleClick}
       />
 
-      <div
-        className="overflow-hidden"
-        style={secondPaneStyle}
-      >
+      <div className="overflow-hidden" style={secondPaneStyle}>
         {secondChild}
       </div>
     </div>

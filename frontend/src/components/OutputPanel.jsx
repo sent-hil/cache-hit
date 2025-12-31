@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { parseAnsi } from '../utils/ansiParser';
+import { useEffect, useRef } from "react";
+import { parseAnsi } from "../utils/ansiParser";
 
 export const OutputPanel = ({ output, isRunning, elapsedMs, onClear }) => {
   const outputRef = useRef(null);
@@ -48,7 +48,7 @@ export const OutputPanel = ({ output, isRunning, elapsedMs, onClear }) => {
       );
     }
 
-    const combined = (output.stdout || '') + (output.stderr || '');
+    const combined = (output.stdout || "") + (output.stderr || "");
 
     return (
       <>
@@ -58,9 +58,11 @@ export const OutputPanel = ({ output, isRunning, elapsedMs, onClear }) => {
           <span>python3 solution.py</span>
         </div>
         <div className="mt-2 text-content pl-4 border-l border-border whitespace-pre-wrap">
-          {combined.trim() || '(no output)'}
+          {combined.trim() || "(no output)"}
           {output.exit_code !== 0 && (
-            <div className="mt-2 text-red-400">Exit code: {output.exit_code}</div>
+            <div className="mt-2 text-red-400">
+              Exit code: {output.exit_code}
+            </div>
           )}
           <div className="mt-2 text-content-muted text-[10px]">
             Completed in {output.execution_time_ms?.toFixed(1)}ms
@@ -70,12 +72,13 @@ export const OutputPanel = ({ output, isRunning, elapsedMs, onClear }) => {
     );
   };
 
-
   return (
     <div className="h-full border-t border-border bg-surface-panel flex flex-col">
       <div className="flex items-center justify-between px-3 py-1.5 bg-surface-subtle border-b border-border">
         <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-[14px] text-content-muted">terminal</span>
+          <span className="material-symbols-outlined text-[14px] text-content-muted">
+            terminal
+          </span>
           <span className="text-[10px] font-bold text-content-muted uppercase tracking-wider">
             Console Output
           </span>

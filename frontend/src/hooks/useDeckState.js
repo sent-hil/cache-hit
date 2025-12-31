@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { api } from "../utils/api";
 
 const API_URL = "http://localhost:8000";
@@ -10,9 +10,10 @@ export const useDeckState = (deckId) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [initialTotalCards, setInitialTotalCards] = useState(0);
+  const initialTotalCardsRef = useRef(0); // Use ref to avoid stale closures
   const userId = "user1"; // Hardcoded for now
 
-  const loadDeck = async () => {
+  const loadDeck = useCallback(async (isInitialLoad = false) => {
     setLoading(true);
     setError(null);
     try {
@@ -34,8 +35,9 @@ export const useDeckState = (deckId) => {
       setDueCards(cards);
       setCurrentCardIndex(0);
 
-      // Set initial total only on first load
-      if (initialTotalCards === 0) {
+      // Set initial total on first load of a deck
+      if (isInitialLoad) {
+        initialTotalCardsRef.current = cards.length; // Update ref
         setInitialTotalCards(cards.length);
       }
     } catch (err) {
@@ -44,7 +46,7 @@ export const useDeckState = (deckId) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [deckId]); // Dependencies: deckId (api and setters are stable)
 
   useEffect(() => {
     if (!deckId) {
@@ -53,9 +55,10 @@ export const useDeckState = (deckId) => {
       return;
     }
 
-    setInitialTotalCards(0);
-    loadDeck();
-  }, [deckId]);
+    // Reset ref when deck changes
+    initialTotalCardsRef.current = 0;
+    loadDeck(true); // true = initial load, will set initialTotalCards
+  }, [deckId, loadDeck]); // Include loadDeck in dependencies
 
   const nextCard = () => {
     if (currentCardIndex < dueCards.length - 1) {
@@ -75,10 +78,16 @@ export const useDeckState = (deckId) => {
   const canGoNext = currentCardIndex < dueCards.length - 1;
   const canGoPrevious = currentCardIndex > 0;
 
+  // Calculate display index (1-indexed), clamping to totalCards when all done
+  const displayIndex = dueCards.length === 0
+    ? totalCards  // Show total when all complete
+    : cardsReviewed + currentCardIndex + 1;  // Add 1 for 1-indexed display
+
   return {
     currentCard,
-    currentCardIndex: cardsReviewed,
+    currentCardIndex: displayIndex,
     totalCards,
+    remainingCards: dueCards.length,  // Add remaining count for modal check
     nextCard,
     previousCard,
     canGoNext,
@@ -86,6 +95,7 @@ export const useDeckState = (deckId) => {
     loading,
     error,
     deckName: deck?.name || "",
+    language: deck?.language || "python",  // Add language
     reloadDeck: loadDeck,
   };
 };

@@ -9,7 +9,7 @@ export const useCodeExecution = (backendAvailable) => {
   const timer = useTimer();
   const executingRef = useRef(false);
 
-  const executeCode = async (code) => {
+  const executeCode = async (code, language = "python") => {
     // Ignore if already running
     if (executingRef.current || isRunning) {
       console.log("Execution already in progress, ignoring request");
@@ -28,7 +28,7 @@ export const useCodeExecution = (backendAvailable) => {
     timer.start();
 
     try {
-      const result = await api.executeCode(code);
+      const result = await api.executeCode(code, language);
       console.log("useCodeExecution: Got result", result);
       console.log(
         "useCodeExecution: stdout length",
@@ -50,7 +50,7 @@ export const useCodeExecution = (backendAvailable) => {
         memory_used_mb: 0,
         cpu_percent: 0,
         container_id: "N/A",
-        language: "python",
+        language: language,
         image_name: "N/A",
         file_path: "N/A",
       });

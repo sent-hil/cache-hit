@@ -68,7 +68,7 @@ describe("useDeckState", () => {
     expect(result.current.currentCard).toEqual(mockDueCards.cards[0].card);
     expect(result.current.totalCards).toBe(2);
     expect(result.current.deckName).toBe("Python");
-    expect(result.current.currentCardIndex).toBe(0);
+    expect(result.current.currentCardIndex).toBe(1); // 1-indexed display
   });
 
   it("should handle error when loading deck fails", async () => {
@@ -108,7 +108,7 @@ describe("useDeckState", () => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(result.current.currentCardIndex).toBe(0);
+    expect(result.current.currentCardIndex).toBe(1); // 1-indexed display
     expect(result.current.totalCards).toBe(2);
     expect(result.current.canGoNext).toBe(true);
   });
@@ -166,12 +166,12 @@ describe("useDeckState", () => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(result.current.currentCardIndex).toBe(0);
+    expect(result.current.currentCardIndex).toBe(1); // 1-indexed display
 
     act(() => {
       result.current.previousCard();
     });
-    expect(result.current.currentCardIndex).toBe(0);
+    expect(result.current.currentCardIndex).toBe(1); // Can't go before first card
   });
 
   it("should reload deck and track progress", async () => {
@@ -191,7 +191,7 @@ describe("useDeckState", () => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(result.current.currentCardIndex).toBe(0);
+    expect(result.current.currentCardIndex).toBe(1); // 1-indexed display
     expect(result.current.totalCards).toBe(2);
 
     const updatedDueCards = {
@@ -214,6 +214,6 @@ describe("useDeckState", () => {
     });
 
     expect(result.current.totalCards).toBe(2);
-    expect(result.current.currentCardIndex).toBe(1);
+    expect(result.current.currentCardIndex).toBe(2); // After reviewing 1 card, on card 2/2
   });
 });

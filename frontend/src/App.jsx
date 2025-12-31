@@ -31,12 +31,21 @@ function App() {
   } = useCodeExecution(backendAvailable);
 
   const USER_ID = "user1";
-  const [selectedDeckId, setSelectedDeckId] = useState("all");
+  const [selectedDeckId, setSelectedDeckId] = useState(() => {
+    // Remember last selected deck from localStorage
+    return localStorage.getItem("selectedDeckId") || "all";
+  });
+
+  // Save selected deck to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("selectedDeckId", selectedDeckId);
+  }, [selectedDeckId]);
 
   const {
     currentCard,
     currentCardIndex,
     totalCards,
+    remainingCards,
     nextCard,
     previousCard,
     canGoNext,
@@ -44,6 +53,7 @@ function App() {
     loading: deckLoading,
     error: deckError,
     deckName,
+    language,
     reloadDeck,
   } = useDeckState(selectedDeckId);
 
@@ -91,7 +101,7 @@ function App() {
   }, [currentCardIndex, clearOutput]);
 
   const handleRun = (codeOverride) => {
-    executeCode(codeOverride || code);
+    executeCode(codeOverride || code, language);
   };
 
   const handleCodeChange = (value) => {
@@ -108,7 +118,8 @@ function App() {
     ) || false;
 
   const handleReloadDeck = () => {
-    window.location.reload();
+    // Reload the current deck instead of full page reload
+    reloadDeck();
   };
 
   useEffect(() => {
@@ -125,7 +136,7 @@ function App() {
     clearOutput();
   }, [selectedDeckId, clearOutput]);
 
-  const showCompleteModal = !deckLoading && totalCards === 0;
+  const showCompleteModal = !deckLoading && remainingCards === 0 && (totalCards > 0 || selectedDeckId !== "all");
 
   return (
     <div className="flex flex-col h-screen bg-surface">
@@ -136,7 +147,7 @@ function App() {
           onRedo={handleReloadDeck}
         />
       )}
-      <header className="h-12 border-b border-border bg-surface-panel flex items-center justify-between px-4 shrink-0 z-20">
+      <header className="h-12 border-b border-border bg-surface-panel flex items-center justify-between px-4 shrink-0 z-[60]">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-primary font-bold tracking-tight">
             <span className="material-symbols-outlined text-[20px]">
@@ -160,20 +171,25 @@ function App() {
             <span className="text-content-muted">PROGRESS</span>
             <div className="flex items-center gap-1">
               <span className="text-primary font-bold">
-                {currentCardIndex + 1}
+                {currentCardIndex}
               </span>
               <span className="text-content-muted">/</span>
               <span>{totalCards}</span>
             </div>
             <div className="hidden md:flex text-content-muted tracking-tighter">
               {(() => {
-                const TOTAL_SYMBOLS = 20;
-                const progressRatio =
-                  totalCards > 0 ? (currentCardIndex + 1) / totalCards : 0;
-                const completedSymbols = Math.floor(
-                  progressRatio * TOTAL_SYMBOLS
+                const MAX_SYMBOLS = 20;
+                // Use the smaller of totalCards or MAX_SYMBOLS for better visual match
+                const symbolCount = Math.min(totalCards, MAX_SYMBOLS);
+                const completedCards = currentCardIndex;
+
+                // Calculate symbols based on actual progress
+                const completedSymbols = Math.min(
+                  Math.ceil((completedCards / totalCards) * symbolCount),
+                  symbolCount
                 );
-                const remainingSymbols = TOTAL_SYMBOLS - completedSymbols;
+                const remainingSymbols = symbolCount - completedSymbols;
+
                 return (
                   <>
                     <span className="text-accent">

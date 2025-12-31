@@ -79,6 +79,7 @@ describe("DeckSelector Integration Tests", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
 
     // Mock API responses
     api.api.checkHealth.mockResolvedValue({ status: "ok" });

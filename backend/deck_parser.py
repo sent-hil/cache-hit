@@ -22,6 +22,7 @@ class Deck(BaseModel):
     name: str
     total_cards: int
     cards: List[Card]
+    language: str = "python"  # default to python
 
 
 def extract_code_blocks(text: str) -> str:
@@ -97,4 +98,19 @@ def parse_deck_folder(folder_path: str) -> Deck:
             print(f"Error parsing {file_path.name}: {e}")
             continue
 
-    return Deck(id=deck_id, name=deck_name, total_cards=len(cards), cards=cards)
+    # Infer language from deck name
+    language = "python"  # default
+    deck_name_lower = deck_name.lower()
+    if "ruby" in deck_name_lower:
+        language = "ruby"
+    elif "python" in deck_name_lower:
+        language = "python"
+    # Add more language mappings here as needed
+
+    return Deck(
+        id=deck_id,
+        name=deck_name,
+        total_cards=len(cards),
+        cards=cards,
+        language=language,
+    )

@@ -1,7 +1,7 @@
 import json
-from pathlib import Path
 from datetime import datetime, timezone
-from typing import List, Dict, Optional
+from pathlib import Path
+from typing import Dict, List, Optional
 
 
 class ReviewStorage:

@@ -4,8 +4,9 @@ Simple test script for the Code Runner API.
 Usage: python test_api.py
 """
 
-import requests
 import json
+
+import requests
 
 BASE_URL = "http://localhost:8000"
 

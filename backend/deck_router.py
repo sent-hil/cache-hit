@@ -1,9 +1,9 @@
 import logging
-from typing import Dict
 from functools import lru_cache
-from fastapi import APIRouter, HTTPException, Depends
+from typing import Dict
 
-from deck_parser import Deck, Card
+from deck_parser import Card, Deck
+from fastapi import APIRouter, Depends, HTTPException
 
 logger = logging.getLogger(__name__)
 

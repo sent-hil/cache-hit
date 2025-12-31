@@ -1,6 +1,7 @@
-from fsrs import Scheduler, Card, Rating, ReviewLog
 from datetime import datetime, timezone
-from typing import Tuple, Dict
+from typing import Dict, Tuple
+
+from fsrs import Card, Rating, ReviewLog, Scheduler
 
 
 class FSRSScheduler:

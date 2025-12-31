@@ -2,14 +2,14 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
+import deck_router
+import execution_router
+import review_router
+import uvicorn
 from container_manager import LANGUAGE_CONFIG
 from deck_parser import parse_deck_folder
-
-import execution_router
-import deck_router
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -75,8 +75,6 @@ app.add_middleware(
 
 logger.info("FastAPI app created with CORS middleware")
 
-import review_router
-
 app.include_router(execution_router.router)
 app.include_router(deck_router.router)
 app.include_router(review_router.router)
@@ -85,6 +83,4 @@ logger.info("Routers included")
 
 
 if __name__ == "__main__":
-    import uvicorn
-
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="debug")

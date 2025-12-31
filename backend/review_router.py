@@ -1,12 +1,12 @@
 import logging
-from typing import Dict
 from functools import lru_cache
-from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
+from typing import Dict
 
-from deck_router import get_deck_cache
 from deck_parser import Deck
+from deck_router import get_deck_cache
+from fastapi import APIRouter, Depends, HTTPException
 from fsrs_scheduler import FSRSScheduler
+from pydantic import BaseModel
 from review_storage import ReviewStorage
 
 logger = logging.getLogger(__name__)

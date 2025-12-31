@@ -1,7 +1,7 @@
 import pytest
+from deck_router import get_deck_cache
 from fastapi.testclient import TestClient
 from main import app
-from deck_router import get_deck_cache
 
 
 @pytest.fixture

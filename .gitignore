@@ -213,3 +213,4 @@ backend/review_data/
 .coveragerc
 coverage/
 stitch-imports/
+backend/.claude/

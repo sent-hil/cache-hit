@@ -51,8 +51,8 @@ class FSRSScheduler:
             card.difficulty = state.get("difficulty")
             card.stability = state.get("stability")
 
-        card.reps = state.get("reps", 0)
-        card.lapses = state.get("lapses", 0)
+        card.reps = state.get("reps", 0)  # type: ignore
+        card.lapses = state.get("lapses", 0)  # type: ignore
 
         # Parse dates
         if state.get("due_date"):
@@ -92,8 +92,8 @@ class FSRSScheduler:
             "difficulty": card.difficulty if card.difficulty is not None else 5.0,
             "stability": card.stability if card.stability is not None else 0.0,
             "due_date": card.due.isoformat(),
-            "reps": card.reps,
-            "lapses": card.lapses,
+            "reps": card.reps,  # type: ignore
+            "lapses": card.lapses,  # type: ignore
             "state": state_map.get(card.state, "learning"),
             "last_review": card.last_review.isoformat() if card.last_review else None,
         }

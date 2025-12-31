@@ -2,9 +2,10 @@ import logging
 from functools import lru_cache
 from typing import Dict
 
-from container_manager import LANGUAGE_CONFIG, ContainerManager
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
+
+from container_manager import LANGUAGE_CONFIG, ContainerManager
 
 logger = logging.getLogger(__name__)
 

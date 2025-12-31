@@ -255,7 +255,7 @@ class ContainerManager:
                 execution_time_ms=round(execution_time_ms, 2),
                 container_id=container.short_id,
                 language=language,
-                image_name=config["image"],
+                image_name=config["image"],  # type: ignore
                 memory_used_mb=round(memory_used_mb, 2),
                 cpu_percent=round(cpu_percent, 2),
                 file_path=filepath,

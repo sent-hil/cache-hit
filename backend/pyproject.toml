@@ -20,4 +20,4 @@ dev = [
 ]
 
 [tool.ruff]
-extend-select = ["I"]
+lint.extend-select = ["I"]

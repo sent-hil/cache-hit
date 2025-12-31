@@ -1,6 +1,7 @@
 import pytest
-from deck_router import get_deck_cache
 from fastapi.testclient import TestClient
+
+from deck_router import get_deck_cache
 from main import app
 
 

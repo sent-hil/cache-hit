@@ -1,6 +1,38 @@
 import { useEffect } from 'react';
 import { RatingButtonsEnhanced } from './RatingButtonsEnhanced';
 import { useReview } from '../hooks/useReview';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+
+const renderLatex = (text) => {
+  // Render LaTeX expressions in text
+  // Supports both $...$ (inline) and $$...$$ (display) modes
+  try {
+    let result = text;
+
+    // First handle display mode $$...$$
+    result = result.replace(/\$\$([^\$]+)\$\$/g, (match, latex) => {
+      try {
+        return katex.renderToString(latex.trim(), { displayMode: true, throwOnError: false });
+      } catch (e) {
+        return match;
+      }
+    });
+
+    // Then handle inline mode $...$
+    result = result.replace(/\$([^\$]+)\$/g, (match, latex) => {
+      try {
+        return katex.renderToString(latex.trim(), { displayMode: false, throwOnError: false });
+      } catch (e) {
+        return match;
+      }
+    });
+
+    return result;
+  } catch (e) {
+    return text;
+  }
+};
 
 const highlightPython = (code) => {
   let result = code
@@ -216,9 +248,10 @@ export const QuestionPane = ({
                         <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">// ANSWER</span>
                       </div>
                       <div className="border border-secondary/30 bg-secondary/5 p-6 overflow-x-auto">
-                        <div className="text-lg text-content leading-relaxed font-sans whitespace-pre-wrap">
-                          {section.answer_text}
-                        </div>
+                        <div
+                          className="text-lg text-content leading-relaxed font-sans whitespace-pre-wrap"
+                          dangerouslySetInnerHTML={{ __html: renderLatex(section.answer_text) }}
+                        />
                       </div>
                     </div>
                   )}

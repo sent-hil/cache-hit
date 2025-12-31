@@ -214,7 +214,7 @@ export const QuestionPane = ({
                       : "opacity-60 hover:opacity-100 transition-opacity"
                   } group`}
                 >
-                  <div className="shrink-0 z-10">
+                  <div className="shrink-0 z-10 pt-1">
                     {isActive ? (
                       <div className="size-6 bg-primary text-surface font-bold font-mono text-xs flex items-center justify-center rounded-sm shadow-[0_0_10px_rgba(88,166,255,0.4)] ring-4 ring-surface">
                         {index + 1}

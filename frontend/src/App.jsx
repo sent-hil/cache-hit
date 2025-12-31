@@ -88,6 +88,9 @@ function App() {
     const currentSection = currentCard?.sections[currentSectionIndex];
     const answerCode = currentSection?.answer_code || '';
 
+    // Determine if current card is a programming card (has code in any section)
+    const isProgrammingCard = currentCard?.sections.some(section => section.answer_code && section.answer_code.trim() !== '') || false;
+
     const handleReloadDeck = () => {
         window.location.reload();
     };
@@ -135,8 +138,18 @@ function App() {
                             <span>{totalCards}</span>
                         </div>
                         <div className="hidden md:flex text-content-muted tracking-tighter">
-                            <span className="text-accent">{'|'.repeat(Math.min(currentCardIndex + 1, 10))}</span>
-                            <span>{'.'.repeat(Math.max(0, Math.min(totalCards - currentCardIndex - 1, 20)))}</span>
+                            {(() => {
+                                const TOTAL_SYMBOLS = 20;
+                                const progressRatio = totalCards > 0 ? (currentCardIndex + 1) / totalCards : 0;
+                                const completedSymbols = Math.floor(progressRatio * TOTAL_SYMBOLS);
+                                const remainingSymbols = TOTAL_SYMBOLS - completedSymbols;
+                                return (
+                                    <>
+                                        <span className="text-accent">{'|'.repeat(completedSymbols)}</span>
+                                        <span>{'.'.repeat(remainingSymbols)}</span>
+                                    </>
+                                );
+                            })()}
                         </div>
                     </div>
                     <div className="h-4 w-px bg-border mx-2"></div>
@@ -144,47 +157,68 @@ function App() {
             </header>
 
             <main className="flex-1 flex min-w-0 min-h-0 relative">
-                <SplitPane direction="horizontal">
-                    {[
-                        <QuestionPane
-                            key="question"
-                            card={currentCard}
-                            deckName={deckName}
-                            loading={deckLoading}
-                            error={deckError}
-                            currentSectionIndex={currentSectionIndex}
-                            totalSections={totalSections}
-                            onNextSection={nextSection}
-                            onGoToSection={goToSection}
-                            canGoNextSection={canGoNextSection}
-                            onNextCard={nextCard}
-                            canGoNextCard={canGoNext}
-                            onShowAnswer={handleShowAnswer}
-                            onHideAnswer={handleHideAnswer}
-                            showAnswer={showAnswer}
-                            deckId={selectedDeckId}
-                            reloadDeck={reloadDeck}
-                        />,
-                        <EditorOutputPane
-                            key="editor-output"
-                            code={code}
-                            onCodeChange={handleCodeChange}
-                            onRun={handleRun}
-                            output={output}
-                            isRunning={isRunning}
-                            elapsedMs={elapsedMs}
-                            backendAvailable={backendAvailable}
-                            backendChecking={checking}
-                            backendError={backendError}
-                            onClearOutput={clearOutput}
-                            onReconnect={checkHealth}
-                            activeTab={activeTab}
-                            onTabChange={handleTabChange}
-                            showAnswer={showAnswer}
-                            answerCode={answerCode}
-                        />,
-                    ]}
-                </SplitPane>
+                {isProgrammingCard ? (
+                    <SplitPane direction="horizontal">
+                        {[
+                            <QuestionPane
+                                key="question"
+                                card={currentCard}
+                                deckName={deckName}
+                                loading={deckLoading}
+                                error={deckError}
+                                currentSectionIndex={currentSectionIndex}
+                                totalSections={totalSections}
+                                onNextSection={nextSection}
+                                onGoToSection={goToSection}
+                                canGoNextSection={canGoNextSection}
+                                onNextCard={nextCard}
+                                canGoNextCard={canGoNext}
+                                onShowAnswer={handleShowAnswer}
+                                onHideAnswer={handleHideAnswer}
+                                showAnswer={showAnswer}
+                                deckId={selectedDeckId}
+                                reloadDeck={reloadDeck}
+                            />,
+                            <EditorOutputPane
+                                key="editor-output"
+                                code={code}
+                                onCodeChange={handleCodeChange}
+                                onRun={handleRun}
+                                output={output}
+                                isRunning={isRunning}
+                                elapsedMs={elapsedMs}
+                                backendAvailable={backendAvailable}
+                                backendChecking={checking}
+                                backendError={backendError}
+                                onClearOutput={clearOutput}
+                                onReconnect={checkHealth}
+                                activeTab={activeTab}
+                                onTabChange={handleTabChange}
+                                showAnswer={showAnswer}
+                                answerCode={answerCode}
+                            />,
+                        ]}
+                    </SplitPane>
+                ) : (
+                    <QuestionPane
+                        card={currentCard}
+                        deckName={deckName}
+                        loading={deckLoading}
+                        error={deckError}
+                        currentSectionIndex={currentSectionIndex}
+                        totalSections={totalSections}
+                        onNextSection={nextSection}
+                        onGoToSection={goToSection}
+                        canGoNextSection={canGoNextSection}
+                        onNextCard={nextCard}
+                        canGoNextCard={canGoNext}
+                        onShowAnswer={handleShowAnswer}
+                        onHideAnswer={handleHideAnswer}
+                        showAnswer={showAnswer}
+                        deckId={selectedDeckId}
+                        reloadDeck={reloadDeck}
+                    />
+                )}
             </main>
 
             <Footer

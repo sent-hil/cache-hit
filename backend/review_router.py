@@ -135,8 +135,10 @@ async def get_due_cards(
                                     "state": state["state"],
                                 }
                             )
+                        card_dict = card.model_dump()
+                        card_dict["deck_id"] = actual_deck_id  # Add actual deck ID
                         all_cards_list.append(
-                            {"card": card.model_dump(), "due_sections": sections_list}
+                            {"card": card_dict, "due_sections": sections_list}
                         )
                 else:
                     # Build map of due cards for this deck
@@ -152,8 +154,10 @@ async def get_due_cards(
                                     f"Card {card_id} not found in deck {actual_deck_id}"
                                 )
                                 continue
+                            card_dict = card.model_dump()
+                            card_dict["deck_id"] = actual_deck_id  # Add actual deck ID
                             cards_map[card_id] = {
-                                "card": card.model_dump(),
+                                "card": card_dict,
                                 "due_sections": [],
                             }
 

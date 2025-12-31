@@ -70,9 +70,11 @@ export const QuestionPane = ({
     if (!card || submitting) return;
 
     try {
-      console.log(`Submitting review for all ${totalSections} sections of card ${card.id}`);
+      // Use card's actual deck_id if available (for "all" deck), otherwise use selected deckId
+      const actualDeckId = card.deck_id || deckId;
+      console.log(`Submitting review for all ${totalSections} sections of card ${card.id} to deck ${actualDeckId}`);
       for (let i = 0; i < totalSections; i++) {
-        const result = await submitReview(userId, deckId, card.id, i, rating);
+        const result = await submitReview(userId, actualDeckId, card.id, i, rating);
         console.log(`Section ${i} review submitted:`, result);
       }
 
@@ -113,8 +115,11 @@ export const QuestionPane = ({
     );
   }
 
+  // Determine if this is a programming card (has code)
+  const isProgrammingCard = card?.sections.some(section => section.answer_code && section.answer_code.trim() !== '') || false;
+
   return (
-    <section className="w-full h-full flex flex-col border-r border-border bg-surface relative">
+    <section className={`w-full h-full flex flex-col ${isProgrammingCard ? 'border-r border-border' : ''} bg-surface relative`}>
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         <div className="max-w-4xl w-full mx-auto py-8 px-6 flex flex-col gap-8 pb-6">
         <div className="flex items-center bg-surface-subtle border border-border p-3">
@@ -201,6 +206,19 @@ export const QuestionPane = ({
                             )
                           }}
                         />
+                      </div>
+                    </div>
+                  )}
+
+                  {isActive && !isProgrammingCard && showAnswer && section.answer_text && (
+                    <div className="flex flex-col gap-3 mt-6">
+                      <div className="flex justify-between items-baseline border-b border-border pb-1 mb-1">
+                        <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">// ANSWER</span>
+                      </div>
+                      <div className="border border-secondary/30 bg-secondary/5 p-6 overflow-x-auto">
+                        <div className="text-lg text-content leading-relaxed font-sans whitespace-pre-wrap">
+                          {section.answer_text}
+                        </div>
                       </div>
                     </div>
                   )}

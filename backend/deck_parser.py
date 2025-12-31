@@ -8,6 +8,7 @@ from pydantic import BaseModel
 class Section(BaseModel):
     question: str
     answer_code: str
+    answer_text: str = ""
 
 
 class Card(BaseModel):
@@ -47,7 +48,19 @@ def parse_markdown_file(content: str, filename: str) -> Card:
             answer_text = parts[i + 1].strip()
             answer_code = extract_code_blocks(answer_text)
 
-            sections.append(Section(question=question_text, answer_code=answer_code))
+            # If no code blocks found, treat as plain text answer
+            if not answer_code:
+                sections.append(
+                    Section(
+                        question=question_text, answer_code="", answer_text=answer_text
+                    )
+                )
+            else:
+                sections.append(
+                    Section(
+                        question=question_text, answer_code=answer_code, answer_text=""
+                    )
+                )
             i += 2
         else:
             i += 1

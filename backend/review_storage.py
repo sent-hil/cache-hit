@@ -100,6 +100,11 @@ class ReviewCache:
     ) -> CardReviewProgress:
         """Record a section review and return updated progress."""
         progress = self._in_progress.get(card_id)
+
+        # Reset progress if total_sections changed (e.g., switching to card-level review)
+        if progress and progress.total_sections != total_sections:
+            progress = None
+
         if not progress:
             progress = self.start_card_review(card_id, total_sections)
 

@@ -6,6 +6,12 @@ const INITIAL_CODE = `# Write your Python code here and press Cmd+Enter to run
 
 export const CodeEditor = ({ value, onChange, onRun, backendAvailable }) => {
   const editorRef = useRef(null);
+  const onRunRef = useRef(onRun);
+
+  // Keep the ref updated with the latest onRun
+  useEffect(() => {
+    onRunRef.current = onRun;
+  }, [onRun]);
 
   const handleEditorDidMount = (editor, monaco) => {
     editorRef.current = editor;
@@ -35,10 +41,11 @@ export const CodeEditor = ({ value, onChange, onRun, backendAvailable }) => {
 
     monaco.editor.setTheme("github-dark");
 
+    // Use ref to always get the latest onRun callback
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-      if (onRun) {
+      if (onRunRef.current) {
         const currentCode = editor.getValue();
-        onRun(currentCode);
+        onRunRef.current(currentCode);
       }
     });
 

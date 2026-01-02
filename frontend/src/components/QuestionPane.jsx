@@ -118,31 +118,23 @@ export const QuestionPane = ({
 
     try {
       console.log(
-        `Submitting review for card ${card.id}, section ${currentSectionIndex}, remembered: ${remembered}`
+        `Submitting card-level review for card ${card.id}, remembered: ${remembered}`
       );
 
+      // Card-level review: always submit as single section to trigger immediate Mochi sync
       const result = await submitReview(
         card.id,
-        currentSectionIndex,
+        0,  // section_index
         remembered,
-        totalSections
+        1   // total_sections (card-level = 1 section)
       );
 
       console.log("Review submitted:", result);
 
-      // If card is complete (all sections reviewed), notify parent
-      if (result.card_complete) {
-        console.log("Card complete, synced to Mochi");
-        onHideAnswer();
-        if (onCardComplete) {
-          onCardComplete();
-        }
-      } else {
-        // Move to next section
-        onHideAnswer();
-        if (canGoNextSection) {
-          onNextSection();
-        }
+      // Move to next card
+      onHideAnswer();
+      if (onCardComplete) {
+        onCardComplete();
       }
     } catch (err) {
       console.error("Failed to submit review:", err);

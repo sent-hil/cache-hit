@@ -5,7 +5,7 @@ import katex from "katex";
 import "katex/dist/katex.min.css";
 
 // Handle Mochi cloze deletions: {{hidden text}} -> clickable hidden span
-const renderCloze = (text) => {
+export const renderCloze = (text) => {
   return text.replace(
     /\{\{([^}]+)\}\}/g,
     (match, content) => {
@@ -72,7 +72,7 @@ const renderLatex = (text) => {
 };
 
 // Render content with code blocks and LaTeX
-const renderContent = (text) => {
+export const renderContent = (text) => {
   if (!text) return "";
 
   // Split by code blocks, preserving the delimiters
@@ -95,7 +95,7 @@ const renderContent = (text) => {
   }).join("");
 };
 
-const highlightPython = (code) => {
+export const highlightPython = (code) => {
   let result = code
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -320,23 +320,15 @@ export const QuestionPane = ({
                       </div>
                     </div>
 
-                    {isActive && section.question?.includes("```") && (
-                      <div className="flex flex-col gap-2">
-                        <div className="border border-border bg-surface-panel p-4 overflow-x-auto relative">
-                          <div className="absolute top-0 left-0 w-1 h-full bg-border"></div>
-                          <pre
-                            className="font-mono text-sm leading-relaxed"
-                            dangerouslySetInnerHTML={{
-                              __html: highlightPython(
-                                section.question
-                                  .split("```")[1]
-                                  ?.replace(/^[a-zA-Z]+\n/, "") // Strip language identifier (python, ruby, etc.)
-                                  .replace(/^\n/, "") || ""
-                              ),
-                            }}
-                          />
-                        </div>
-                      </div>
+                    {isActive && section.question?.split("\n").slice(1).join("\n").trim() && (
+                      <div
+                        className="text-lg text-content leading-relaxed"
+                        dangerouslySetInnerHTML={{
+                          __html: renderContent(
+                            section.question.split("\n").slice(1).join("\n")
+                          ),
+                        }}
+                      />
                     )}
 
                     {isActive && showAnswer && section.answer && (

@@ -249,11 +249,14 @@ export const QuestionPane = ({
                               : "text-content-muted group-hover:text-white transition-colors cursor-pointer"
                           }`}
                           onClick={() => !isActive && onGoToSection(index)}
-                        >
-                          {index === 0
-                            ? card.name || section.question?.split("\n")[0]
-                            : section.question?.split("\n")[0]}
-                        </h1>
+                          dangerouslySetInnerHTML={{
+                            __html: renderLatex(
+                              index === 0
+                                ? card.name || section.question?.split("\n")[0] || ""
+                                : section.question?.split("\n")[0] || ""
+                            ),
+                          }}
+                        />
                         {isActive && (
                           <div className="flex items-center gap-2 mt-2">
                             <span className="flex size-2 relative">

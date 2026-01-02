@@ -22,44 +22,6 @@
       "total_sections": 3
     },
     {
-      "id": "I8HmC3KX",
-      "content": "How to get 50% for array: `a = [1,2,3,4,5]`?\n---\n```python\nimport numpy as np\n\nnp.percentile(np.array(a), 50)\n```",
-      "deck_id": "GIIEHHb1",
-      "name": "How to get 50% for array: a = [1,2,3,4,5]?",
-      "sections": [
-        {
-          "question": "How to get 50% for array: `a = [1,2,3,4,5]`?",
-          "answer": "```python\nimport numpy as np\n\nnp.percentile(np.array(a), 50)\n```"
-        }
-      ],
-      "total_sections": 1
-    },
-    {
-      "id": "J6EGf83e",
-      "content": "What's a power function?\n---\nFunction of form $x^n$ where $n$ is a real number (positive, negative, fractional).\n$x^{2},x^{3}$\n---\nWhat's a radical function?\n---\nFunction of the form $x^{1/n}$.\nInvolves roots such as square root, cube root etc.\n${\\sqrt{x}}=x^{1/2},\\,{\\sqrt{x}}=x^{1/3}$\n---\nWhat is $x^{-2}$?\n---\nPower function.\n---\nAll {radical | power} functions are {radical | power} functions, but not all {radical | power} functions are {radical | power} functions.\n---\nAll radical functions are power functions, but not all power functions are radical functions.\n![image.png](@media/DGi9yozx.png)",
-      "deck_id": "MezldXis",
-      "name": "What's a power function?",
-      "sections": [
-        {
-          "question": "What's a power function?",
-          "answer": "Function of form $x^n$ where $n$ is a real number (positive, negative, fractional).\n$x^{2},x^{3}$"
-        },
-        {
-          "question": "What's a radical function?",
-          "answer": "Function of the form $x^{1/n}$.\nInvolves roots such as square root, cube root etc.\n${\\sqrt{x}}=x^{1/2},\\,{\\sqrt{x}}=x^{1/3}$"
-        },
-        {
-          "question": "What is $x^{-2}$?",
-          "answer": "Power function."
-        },
-        {
-          "question": "All {radical | power} functions are {radical | power} functions, but not all {radical | power} functions are {radical | power} functions.",
-          "answer": "All radical functions are power functions, but not all power functions are radical functions.\n![image.png](@media/DGi9yozx.png)"
-        }
-      ],
-      "total_sections": 4
-    },
-    {
       "id": "OXBk8ZFh",
       "content": "What is Union of two sets?\n---\nOperation that combines elements of 2 sets, but with no duplicates (since Set can't have duplicate values).\n---\nHow do you write it?\n---\n$\\ \\{1,2,3\\} \\cup \\{3,4,5\\} = \\{1,2,3,4,5\\} $\n---\nWhat is intersection of two Sets?\n---\nOperation that combines elements that are both sets.\n---\nHow do you write it?\n---\n$\\ \\{1,2,3\\} \\cap \\{3,4,5\\} = \\{3\\} $\n---\nWhat is $\\ \\{1,2,3\\} \\cap \\{4,5\\} = $\n---\n$\\ \\{1,2,3\\} \\cap \\{4,5\\} = \\emptyset $",
       "deck_id": "MezldXis",

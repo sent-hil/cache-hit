@@ -149,3 +149,28 @@
   -moz-user-select: none;
   -ms-user-select: none;
 }
+
+/* Cloze deletion (hidden text revealed on click) */
+.cloze-hidden {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 2px;
+  padding: 0 4px;
+  margin: 0 2px;
+}
+
+.cloze-hidden[data-revealed="false"] {
+  background-color: #58a6ff;
+  color: transparent;
+  user-select: none;
+}
+
+.cloze-hidden[data-revealed="false"]:hover {
+  background-color: #79b8ff;
+}
+
+.cloze-hidden[data-revealed="true"] {
+  background-color: rgba(88, 166, 255, 0.15);
+  color: #58a6ff;
+  font-weight: 500;
+}

@@ -1,8 +1,18 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { RatingButtonsEnhanced } from "./RatingButtonsEnhanced";
 import { useReview } from "../hooks/useReview";
 import katex from "katex";
 import "katex/dist/katex.min.css";
+
+// Handle Mochi cloze deletions: {{hidden text}} -> clickable hidden span
+const renderCloze = (text) => {
+  return text.replace(
+    /\{\{([^}]+)\}\}/g,
+    (match, content) => {
+      return `<span class="cloze-hidden" data-revealed="false" onclick="this.dataset.revealed = this.dataset.revealed === 'true' ? 'false' : 'true'">${content}</span>`;
+    }
+  );
+};
 
 const renderMedia = (text) => {
   // Handle markdown image syntax with @media references: ![alt](@media/filename.png)
@@ -51,6 +61,9 @@ const renderLatex = (text) => {
         return match;
       }
     });
+
+    // Finally handle cloze deletions {{hidden text}}
+    result = renderCloze(result);
 
     return result;
   } catch (e) {

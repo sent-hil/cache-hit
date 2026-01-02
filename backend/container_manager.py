@@ -18,7 +18,7 @@ MAX_OUTPUT_SIZE = 10 * 1024
 
 LANGUAGE_CONFIG = {
     "python": {
-        "image": "python:3.10-alpine",
+        "image": "python-numpy:3.10-alpine",
         "extension": ".py",
         "command": ["python3", "{filepath}"],
     },

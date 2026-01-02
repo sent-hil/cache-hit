@@ -214,3 +214,4 @@ backend/review_data/
 coverage/
 stitch-imports/
 backend/.claude/
+backend/review_cache/

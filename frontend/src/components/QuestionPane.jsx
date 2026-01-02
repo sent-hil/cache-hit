@@ -71,6 +71,30 @@ const renderLatex = (text) => {
   }
 };
 
+// Render content with code blocks and LaTeX
+const renderContent = (text) => {
+  if (!text) return "";
+
+  // Split by code blocks, preserving the delimiters
+  const parts = text.split(/(```[\s\S]*?```)/g);
+
+  return parts.map(part => {
+    if (part.startsWith("```")) {
+      // Extract code from code block
+      const code = part
+        .replace(/^```[a-zA-Z]*\n?/, "") // Remove opening ``` with optional language
+        .replace(/```$/, "")              // Remove closing ```
+        .trim();
+
+      return `<div class="border border-border bg-surface-panel p-3 overflow-x-auto relative"><div class="absolute top-0 left-0 w-1 h-full bg-border"></div><pre class="font-mono text-sm leading-relaxed m-0">${highlightPython(code)}</pre></div>`;
+    } else {
+      // Regular text - apply LaTeX and cloze rendering, trim extra whitespace
+      const trimmed = part.trim();
+      return trimmed ? renderLatex(trimmed) : "";
+    }
+  }).join("");
+};
+
 const highlightPython = (code) => {
   let result = code
     .replace(/&/g, "&amp;")
@@ -326,7 +350,7 @@ export const QuestionPane = ({
                             <div
                               className="text-lg text-content leading-relaxed font-sans whitespace-pre-wrap"
                               dangerouslySetInnerHTML={{
-                                __html: renderLatex(section.answer),
+                                __html: renderContent(section.answer),
                               }}
                             />
                           </div>

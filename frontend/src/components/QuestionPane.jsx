@@ -4,11 +4,37 @@ import { useReview } from "../hooks/useReview";
 import katex from "katex";
 import "katex/dist/katex.min.css";
 
-const renderLatex = (text) => {
+const renderMedia = (text, cardId) => {
+  // Handle markdown image syntax with @media references: ![alt](@media/filename.png)
+  // Link to Mochi card view - user will need to be logged in
+  const mochiUrl = cardId ? `https://app.mochi.cards/app#/cards/${cardId}` : null;
+
+  return text.replace(
+    /!\[([^\]]*)\]\(@media\/([^)]+)\)/g,
+    (match, alt, filename) => {
+      const linkStart = mochiUrl ? `<a href="${mochiUrl}" target="_blank" rel="noopener noreferrer" class="no-underline">` : '';
+      const linkEnd = mochiUrl ? '</a>' : '';
+
+      return `${linkStart}<div class="inline-flex items-center gap-3 px-4 py-3 bg-surface-panel border border-dashed border-accent/50 rounded text-content hover:border-accent hover:bg-accent/5 transition-colors cursor-pointer">
+        <span class="material-symbols-outlined text-[24px] text-accent">image</span>
+        <div class="flex flex-col">
+          <span class="text-sm font-medium">${alt || 'Image'}</span>
+          <span class="text-[10px] text-content-muted">${filename} · Click to view in Mochi</span>
+        </div>
+        <span class="material-symbols-outlined text-[16px] text-content-muted ml-auto">open_in_new</span>
+      </div>${linkEnd}`;
+    }
+  );
+};
+
+const renderLatex = (text, cardId = null) => {
   try {
     let result = text;
 
-    // First handle display mode $$...$$
+    // First handle @media image references
+    result = renderMedia(result, cardId);
+
+    // Handle display mode $$...$$
     result = result.replace(/\$\$([^\$]+)\$\$/g, (match, latex) => {
       try {
         return katex.renderToString(latex.trim(), {
@@ -245,7 +271,8 @@ export const QuestionPane = ({
                             __html: renderLatex(
                               index === 0
                                 ? card.name || section.question?.split("\n")[0] || ""
-                                : section.question?.split("\n")[0] || ""
+                                : section.question?.split("\n")[0] || "",
+                              card.id
                             ),
                           }}
                         />
@@ -296,7 +323,7 @@ export const QuestionPane = ({
                             <div
                               className="text-lg text-content leading-relaxed font-sans whitespace-pre-wrap"
                               dangerouslySetInnerHTML={{
-                                __html: renderLatex(section.answer),
+                                __html: renderLatex(section.answer, card.id),
                               }}
                             />
                           </div>

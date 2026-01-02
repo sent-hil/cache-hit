@@ -39,3 +39,27 @@ class TestHealth:
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "ok"
+
+
+class TestPathTraversalProtection:
+    """Test that path traversal attacks are prevented in SPA file serving."""
+
+    def test_blocks_basic_path_traversal(self, client):
+        """Test that basic ../ path traversal is blocked."""
+        response = client.get("/../../../etc/passwd")
+        assert response.status_code == 404
+
+    def test_blocks_encoded_path_traversal(self, client):
+        """Test that URL-encoded path traversal is blocked."""
+        response = client.get("/..%2F..%2F..%2Fetc%2Fpasswd")
+        assert response.status_code == 404
+
+    def test_blocks_parent_directory_access(self, client):
+        """Test that accessing parent directories is blocked."""
+        response = client.get("/../backend/main.py")
+        assert response.status_code == 404
+
+    def test_blocks_absolute_paths(self, client):
+        """Test that absolute paths outside frontend are blocked."""
+        response = client.get("/etc/passwd")
+        assert response.status_code == 404

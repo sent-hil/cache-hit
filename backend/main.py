@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 import execution_router
@@ -116,14 +116,25 @@ if FRONTEND_DIST.exists():
         """Serve index.html for SPA routing, except API routes."""
         # Don't intercept API routes
         if full_path.startswith(("api/", "execute/", "health", "docs", "openapi.json")):
-            from fastapi import HTTPException
-
             raise HTTPException(status_code=404, detail="Not found")
 
         # Try to serve the file directly if it exists
         file_path = FRONTEND_DIST / full_path
-        if file_path.is_file():
-            return FileResponse(file_path)
+
+        # Security: Prevent path traversal attacks by ensuring resolved path
+        # stays within FRONTEND_DIST directory
+        try:
+            resolved_path = file_path.resolve()
+            resolved_frontend = FRONTEND_DIST.resolve()
+
+            # Check that the resolved path is within the frontend directory
+            if not resolved_path.is_relative_to(resolved_frontend):
+                raise HTTPException(status_code=404, detail="Not found")
+
+            if resolved_path.is_file():
+                return FileResponse(resolved_path)
+        except (ValueError, OSError):
+            raise HTTPException(status_code=404, detail="Not found")
 
         # Otherwise serve index.html for client-side routing
         return FileResponse(FRONTEND_DIST / "index.html")

@@ -14,15 +14,17 @@ describe("useReview", () => {
 
     expect(result.current.submitting).toBe(false);
     expect(result.current.error).toBe(null);
+    expect(result.current.syncError).toBe(null);
   });
 
   it("should submit review successfully", async () => {
     const mockResponse = {
       success: true,
-      next_review_date: "2025-01-02T10:00:00",
-      difficulty: 5.2,
-      stability: 2.5,
-      state: "review",
+      card_complete: true,
+      synced_to_mochi: true,
+      sections_reviewed: 1,
+      total_sections: 1,
+      aggregate_remembered: true,
     };
 
     fetch.mockResolvedValueOnce({
@@ -34,13 +36,7 @@ describe("useReview", () => {
 
     let reviewResult;
     await act(async () => {
-      reviewResult = await result.current.submitReview(
-        "user1",
-        "deck1",
-        "card1",
-        0,
-        3
-      );
+      reviewResult = await result.current.submitReview("card1", 0, true, 1);
     });
 
     expect(fetch).toHaveBeenCalledWith("http://localhost:8000/api/review", {
@@ -49,11 +45,10 @@ describe("useReview", () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        user_id: "user1",
-        deck_id: "deck1",
         card_id: "card1",
         section_index: 0,
-        rating: 3,
+        remembered: true,
+        total_sections: 1,
       }),
     });
 
@@ -63,7 +58,7 @@ describe("useReview", () => {
   });
 
   it("should set submitting state during submission", async () => {
-    const mockResponse = { success: true };
+    const mockResponse = { success: true, card_complete: false };
 
     fetch.mockImplementation(
       () =>
@@ -82,7 +77,7 @@ describe("useReview", () => {
     const { result } = renderHook(() => useReview());
 
     act(() => {
-      result.current.submitReview("user1", "deck1", "card1", 0, 3);
+      result.current.submitReview("card1", 0, true, 2);
     });
 
     expect(result.current.submitting).toBe(true);
@@ -92,12 +87,12 @@ describe("useReview", () => {
     });
   });
 
-  it("should handle submission error with detail message", async () => {
-    const errorDetail = "Rating must be 1-4";
+  it("should handle Mochi sync error", async () => {
+    const errorDetail = "Failed to sync review to Mochi: Connection error";
 
     fetch.mockResolvedValueOnce({
       ok: false,
-      status: 400,
+      status: 503,
       json: async () => ({ detail: errorDetail }),
     });
 
@@ -106,14 +101,14 @@ describe("useReview", () => {
     let error;
     await act(async () => {
       try {
-        await result.current.submitReview("user1", "deck1", "card1", 0, 5);
+        await result.current.submitReview("card1", 0, true, 1);
       } catch (err) {
         error = err;
       }
     });
 
     expect(error.message).toBe(errorDetail);
-    expect(result.current.error).toBe(errorDetail);
+    expect(result.current.syncError).toBe(errorDetail);
     expect(result.current.submitting).toBe(false);
   });
 
@@ -131,14 +126,14 @@ describe("useReview", () => {
     let error;
     await act(async () => {
       try {
-        await result.current.submitReview("user1", "deck1", "card1", 0, 3);
+        await result.current.submitReview("card1", 0, true, 1);
       } catch (err) {
         error = err;
       }
     });
 
-    expect(error.message).toBe("Failed to submit review");
-    expect(result.current.error).toBe("Failed to submit review");
+    expect(error.message).toBe("Unknown error");
+    expect(result.current.error).toBe("Unknown error");
     expect(result.current.submitting).toBe(false);
   });
 
@@ -150,7 +145,7 @@ describe("useReview", () => {
     let error;
     await act(async () => {
       try {
-        await result.current.submitReview("user1", "deck1", "card1", 0, 3);
+        await result.current.submitReview("card1", 0, true, 1);
       } catch (err) {
         error = err;
       }
@@ -168,7 +163,7 @@ describe("useReview", () => {
 
     await act(async () => {
       try {
-        await result.current.submitReview("user1", "deck1", "card1", 0, 3);
+        await result.current.submitReview("card1", 0, true, 1);
       } catch (err) {}
     });
 
@@ -176,35 +171,61 @@ describe("useReview", () => {
 
     fetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ success: true }),
+      json: async () => ({ success: true, card_complete: true }),
     });
 
     await act(async () => {
-      await result.current.submitReview("user1", "deck1", "card1", 0, 3);
+      await result.current.submitReview("card1", 0, true, 1);
     });
 
     expect(result.current.error).toBe(null);
   });
 
-  it("should submit reviews with different ratings", async () => {
+  it("should submit reviews with remembered true and false", async () => {
     const { result } = renderHook(() => useReview());
 
-    for (const rating of [1, 2, 3, 4]) {
+    for (const remembered of [true, false]) {
       fetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true }),
+        json: async () => ({ success: true, card_complete: true }),
       });
 
       await act(async () => {
-        await result.current.submitReview("user1", "deck1", "card1", 0, rating);
+        await result.current.submitReview("card1", 0, remembered, 1);
       });
 
       expect(fetch).toHaveBeenLastCalledWith(
         "http://localhost:8000/api/review",
         expect.objectContaining({
-          body: expect.stringContaining(`"rating":${rating}`),
+          body: expect.stringContaining(`"remembered":${remembered}`),
         })
       );
     }
+  });
+
+  it("should clear sync error when clearSyncError is called", async () => {
+    const errorDetail = "Failed to sync review to Mochi";
+
+    fetch.mockResolvedValueOnce({
+      ok: false,
+      status: 503,
+      json: async () => ({ detail: errorDetail }),
+    });
+
+    const { result } = renderHook(() => useReview());
+
+    await act(async () => {
+      try {
+        await result.current.submitReview("card1", 0, true, 1);
+      } catch (err) {}
+    });
+
+    expect(result.current.syncError).toBe(errorDetail);
+
+    act(() => {
+      result.current.clearSyncError();
+    });
+
+    expect(result.current.syncError).toBe(null);
   });
 });

@@ -5,8 +5,6 @@ import katex from "katex";
 import "katex/dist/katex.min.css";
 
 const renderLatex = (text) => {
-  // Render LaTeX expressions in text
-  // Supports both $...$ (inline) and $$...$$ (display) modes
   try {
     let result = text;
 
@@ -75,6 +73,7 @@ const highlightPython = (code) => {
 export const QuestionPane = ({
   card,
   deckName,
+  isProgrammingCard,
   loading,
   error,
   currentSectionIndex,
@@ -82,24 +81,24 @@ export const QuestionPane = ({
   onNextSection,
   onGoToSection,
   canGoNextSection,
-  onNextCard,
-  canGoNextCard,
   onShowAnswer,
   onHideAnswer,
   showAnswer,
-  deckId,
-  reloadDeck,
+  onCardComplete,
+  onSyncError,
 }) => {
-  const { submitReview, submitting } = useReview();
-  const userId = "user1";
+  const { submitReview, submitting, syncError, clearSyncError } = useReview();
 
+  // Handle keyboard shortcuts for F (forgot) and R (remembered)
   useEffect(() => {
     if (!showAnswer) return;
 
     const handleKeyPress = (e) => {
-      const rating = parseInt(e.key);
-      if (rating >= 1 && rating <= 4) {
-        handleRate(rating);
+      const key = e.key.toLowerCase();
+      if (key === "f") {
+        handleRate(false); // Forgot
+      } else if (key === "r") {
+        handleRate(true); // Remembered
       }
     };
 
@@ -107,38 +106,55 @@ export const QuestionPane = ({
     return () => window.removeEventListener("keypress", handleKeyPress);
   }, [showAnswer, card, currentSectionIndex]);
 
-  const handleRate = async (rating) => {
+  // Propagate sync errors to parent
+  useEffect(() => {
+    if (syncError && onSyncError) {
+      onSyncError(syncError);
+    }
+  }, [syncError, onSyncError]);
+
+  const handleRate = async (remembered) => {
     if (!card || submitting) return;
 
     try {
-      // Use card's actual deck_id if available (for "all" deck), otherwise use selected deckId
-      const actualDeckId = card.deck_id || deckId;
       console.log(
-        `Submitting review for all ${totalSections} sections of card ${card.id} to deck ${actualDeckId}`
+        `Submitting review for card ${card.id}, section ${currentSectionIndex}, remembered: ${remembered}`
       );
-      for (let i = 0; i < totalSections; i++) {
-        const result = await submitReview(
-          userId,
-          actualDeckId,
-          card.id,
-          i,
-          rating
-        );
-        console.log(`Section ${i} review submitted:`, result);
-      }
 
-      onHideAnswer();
-      await reloadDeck();
+      const result = await submitReview(
+        card.id,
+        currentSectionIndex,
+        remembered,
+        totalSections
+      );
+
+      console.log("Review submitted:", result);
+
+      // If card is complete (all sections reviewed), notify parent
+      if (result.card_complete) {
+        console.log("Card complete, synced to Mochi");
+        onHideAnswer();
+        if (onCardComplete) {
+          onCardComplete();
+        }
+      } else {
+        // Move to next section
+        onHideAnswer();
+        if (canGoNextSection) {
+          onNextSection();
+        }
+      }
     } catch (err) {
       console.error("Failed to submit review:", err);
-      alert("Failed to submit review: " + err.message);
+      // Error is handled by useReview hook and propagated via syncError
     }
   };
+
   if (loading) {
     return (
       <section className="w-full flex flex-col border-r border-border bg-surface overflow-y-auto custom-scrollbar relative">
         <div className="max-w-4xl w-full mx-auto p-8 flex items-center justify-center">
-          <div className="text-content-muted">Loading deck...</div>
+          <div className="text-content-muted">Loading cards...</div>
         </div>
       </section>
     );
@@ -158,17 +174,11 @@ export const QuestionPane = ({
     return (
       <section className="w-full flex flex-col border-r border-border bg-surface overflow-y-auto custom-scrollbar relative">
         <div className="max-w-4xl w-full mx-auto p-8 flex items-center justify-center">
-          <div className="text-content-muted">No card selected</div>
+          <div className="text-content-muted">No cards due</div>
         </div>
       </section>
     );
   }
-
-  // Determine if this is a programming card (has code)
-  const isProgrammingCard =
-    card?.sections.some(
-      (section) => section.answer_code && section.answer_code.trim() !== ""
-    ) || false;
 
   return (
     <section
@@ -187,7 +197,7 @@ export const QuestionPane = ({
               </div>
               <div className="flex flex-col">
                 <span className="text-[10px] text-content-muted uppercase tracking-widest font-bold">
-                  Current Section
+                  {deckName || "Unknown Deck"}
                 </span>
                 <span className="text-sm font-bold text-white tracking-wide font-display">
                   SECTION {currentSectionIndex + 1}{" "}
@@ -202,7 +212,7 @@ export const QuestionPane = ({
           <div className="flex flex-col relative">
             <div className="absolute left-[11px] top-8 bottom-12 w-px bg-border"></div>
 
-            {card.sections.map((section, index) => {
+            {card.sections?.map((section, index) => {
               const isActive = index === currentSectionIndex;
 
               return (
@@ -241,8 +251,8 @@ export const QuestionPane = ({
                           onClick={() => !isActive && onGoToSection(index)}
                         >
                           {index === 0
-                            ? card.title
-                            : section.question.split("\n")[0]}
+                            ? card.name || section.question?.split("\n")[0]
+                            : section.question?.split("\n")[0]}
                         </h1>
                         {isActive && (
                           <div className="flex items-center gap-2 mt-2">
@@ -258,7 +268,7 @@ export const QuestionPane = ({
                       </div>
                     </div>
 
-                    {isActive && section.question.includes("```") && (
+                    {isActive && section.question?.includes("```") && (
                       <div className="flex flex-col gap-2">
                         <div className="border border-border bg-surface-panel p-4 overflow-x-auto relative">
                           <div className="absolute top-0 left-0 w-1 h-full bg-border"></div>
@@ -268,7 +278,7 @@ export const QuestionPane = ({
                               __html: highlightPython(
                                 section.question
                                   .split("```")[1]
-                                  ?.replace(/^python\n/, "")
+                                  ?.replace(/^[a-zA-Z]+\n/, "") // Strip language identifier (python, ruby, etc.)
                                   .replace(/^\n/, "") || ""
                               ),
                             }}
@@ -280,7 +290,7 @@ export const QuestionPane = ({
                     {isActive &&
                       !isProgrammingCard &&
                       showAnswer &&
-                      section.answer_text && (
+                      section.answer && (
                         <div className="flex flex-col gap-3 mt-6">
                           <div className="flex justify-between items-baseline border-b border-border pb-1 mb-1">
                             <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">
@@ -291,7 +301,7 @@ export const QuestionPane = ({
                             <div
                               className="text-lg text-content leading-relaxed font-sans whitespace-pre-wrap"
                               dangerouslySetInnerHTML={{
-                                __html: renderLatex(section.answer_text),
+                                __html: renderLatex(section.answer),
                               }}
                             />
                           </div>

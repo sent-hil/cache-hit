@@ -1,13 +1,6 @@
-const RatingButton = ({
-  rating,
-  label,
-  interval,
-  disabled,
-  onRate,
-  variant,
-}) => {
+const RatingButton = ({ remembered, label, disabled, onRate, variant }) => {
   const variants = {
-    again: {
+    forgot: {
       hoverBorder: "hover:border-red-500/50",
       hoverText: "group-hover:text-red-400",
       hoverTextSub: "group-hover:text-red-400/70",
@@ -15,15 +8,7 @@ const RatingButton = ({
       hoverBg: "group-hover:bg-red-500/50",
       hoverShadow: "hover:shadow-[0_0_20px_rgba(239,68,68,0.1)]",
     },
-    hard: {
-      hoverBorder: "hover:border-accent/50",
-      hoverText: "group-hover:text-accent",
-      hoverTextSub: "group-hover:text-accent/70",
-      hoverBorderTop: "group-hover:border-accent/20",
-      hoverBg: "group-hover:bg-accent/50",
-      hoverShadow: "hover:shadow-[0_0_20px_rgba(210,153,34,0.1)]",
-    },
-    good: {
+    remembered: {
       hoverBorder: "hover:border-green-500/50",
       hoverText: "group-hover:text-green-400",
       hoverTextSub: "group-hover:text-green-400/70",
@@ -31,21 +16,13 @@ const RatingButton = ({
       hoverBg: "group-hover:bg-green-500/50",
       hoverShadow: "hover:shadow-[0_0_20px_rgba(34,197,94,0.1)]",
     },
-    easy: {
-      hoverBorder: "hover:border-primary/50",
-      hoverText: "group-hover:text-primary",
-      hoverTextSub: "group-hover:text-primary/70",
-      hoverBorderTop: "group-hover:border-primary/20",
-      hoverBg: "group-hover:bg-primary/50",
-      hoverShadow: "hover:shadow-[0_0_20px_rgba(88,166,255,0.1)]",
-    },
   };
 
   const v = variants[variant];
 
   return (
     <button
-      onClick={() => onRate(rating)}
+      onClick={() => onRate(remembered)}
       disabled={disabled}
       className={`group relative flex flex-col items-center justify-center h-20 bg-surface hover:bg-surface-subtle border border-border ${v.hoverBorder} transition-all ${v.hoverShadow} hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0`}
     >
@@ -57,7 +34,7 @@ const RatingButton = ({
       <span
         className={`text-[10px] text-content-muted/50 ${v.hoverTextSub} font-mono mt-1 transition-colors border-t border-transparent ${v.hoverBorderTop} pt-1`}
       >
-        {interval}
+        {remembered ? "R" : "F"}
       </span>
       <div
         className={`absolute inset-x-0 bottom-0 h-0.5 bg-transparent ${v.hoverBg} transition-colors`}
@@ -66,11 +43,7 @@ const RatingButton = ({
   );
 };
 
-export const RatingButtonsEnhanced = ({
-  onRate,
-  disabled = false,
-  intervals,
-}) => {
+export const RatingButtonsEnhanced = ({ onRate, disabled = false }) => {
   return (
     <div className="w-full py-6">
       <div className="bg-surface-subtle/20 border border-border p-6 backdrop-blur-sm relative overflow-hidden ring-1 ring-border/50">
@@ -86,48 +59,30 @@ export const RatingButtonsEnhanced = ({
                 Review Summary
               </h3>
               <p className="text-xs text-content-muted font-mono">
-                Select recall difficulty to complete this card.
+                Did you remember this card?
               </p>
             </div>
             <div className="px-2 py-1 bg-surface border border-border shadow-sm">
               <span className="text-[10px] text-primary font-mono font-bold tracking-tight">
-                FSRS v4.5 ENABLED
+                MOCHI SYNC
               </span>
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <RatingButton
-              rating={1}
-              label="Again"
-              interval={intervals?.again || "< 1m"}
+              remembered={false}
+              label="Forgot"
               disabled={disabled}
               onRate={onRate}
-              variant="again"
+              variant="forgot"
             />
             <RatingButton
-              rating={2}
-              label="Hard"
-              interval={intervals?.hard || "2d"}
+              remembered={true}
+              label="Remembered"
               disabled={disabled}
               onRate={onRate}
-              variant="hard"
-            />
-            <RatingButton
-              rating={3}
-              label="Good"
-              interval={intervals?.good || "5d"}
-              disabled={disabled}
-              onRate={onRate}
-              variant="good"
-            />
-            <RatingButton
-              rating={4}
-              label="Easy"
-              interval={intervals?.easy || "8d"}
-              disabled={disabled}
-              onRate={onRate}
-              variant="easy"
+              variant="remembered"
             />
           </div>
         </div>

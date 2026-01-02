@@ -18,6 +18,7 @@ export const EditorOutputPane = ({
   onTabChange,
   showAnswer,
   answerCode,
+  language = "python",
 }) => {
   return (
     <section className="w-full h-full flex flex-col bg-surface relative">
@@ -149,6 +150,7 @@ export const EditorOutputPane = ({
               isRunning={isRunning}
               elapsedMs={elapsedMs}
               onClear={onClearOutput}
+              language={language}
             />,
           ]}
         </SplitPane>

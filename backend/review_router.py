@@ -1,14 +1,19 @@
+"""
+Review API endpoints integrated with Mochi.
+
+Endpoints:
+- GET /api/due - Get all due cards from Mochi
+- POST /api/review - Submit a section review
+"""
+
 import logging
 from functools import lru_cache
-from typing import Dict
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from deck_parser import Deck
-from deck_router import get_deck_cache
-from fsrs_scheduler import FSRSScheduler
-from review_storage import ReviewStorage
+from mochi_client import Card, MochiClient
+from review_storage import ReviewCache
 
 logger = logging.getLogger(__name__)
 
@@ -16,246 +21,150 @@ router = APIRouter(prefix="/api")
 
 
 class ReviewRequest(BaseModel):
-    user_id: str
-    deck_id: str
     card_id: str
     section_index: int
-    rating: int
+    remembered: bool
+    total_sections: int
 
 
 class ReviewResponse(BaseModel):
     success: bool
-    next_review_date: str
-    difficulty: float
-    stability: float
-    state: str
+    card_complete: bool
+    synced_to_mochi: bool
+    sections_reviewed: int
+    total_sections: int
+    aggregate_remembered: bool | None = None
 
 
-class ResetRequest(BaseModel):
-    user_id: str
-    deck_id: str
-
-
-class ResetResponse(BaseModel):
-    success: bool
-    cards_reset: int
+class DueCardsResponse(BaseModel):
+    cards: list[dict]
+    total_due: int
 
 
 @lru_cache
-def get_fsrs_scheduler() -> FSRSScheduler:
-    return FSRSScheduler()
+def get_mochi_client() -> MochiClient:
+    """Get singleton MochiClient instance."""
+    return MochiClient()
 
 
 @lru_cache
-def get_review_storage() -> ReviewStorage:
-    return ReviewStorage()
+def get_review_cache() -> ReviewCache:
+    """Get singleton ReviewCache instance."""
+    return ReviewCache()
+
+
+def card_to_dict(card: Card) -> dict:
+    """Convert Card to JSON-serializable dict."""
+    return {
+        "id": card.id,
+        "content": card.content,
+        "deck_id": card.deck_id,
+        "name": card.name,
+        "sections": [
+            {"question": s.question, "answer": s.answer} for s in card.sections
+        ],
+        "total_sections": len(card.sections),
+    }
+
+
+@router.get("/due")
+async def get_due_cards(
+    mochi: MochiClient = Depends(get_mochi_client),
+    cache: ReviewCache = Depends(get_review_cache),
+) -> DueCardsResponse:
+    """Get all cards due for review from Mochi."""
+    logger.info("Fetching due cards from Mochi")
+
+    try:
+        cards = mochi.get_due_cards()
+        cards_data = [card_to_dict(card) for card in cards]
+
+        # Cache for faster subsequent loads
+        cache.cache_due_cards(cards_data)
+
+        logger.info(f"Found {len(cards)} due cards")
+        return DueCardsResponse(cards=cards_data, total_due=len(cards))
+
+    except Exception as e:
+        logger.error(f"Failed to fetch due cards from Mochi: {e}")
+
+        # Try to return cached data if available
+        cached = cache.get_cached_due_cards()
+        if cached:
+            logger.info("Returning cached due cards")
+            return DueCardsResponse(cards=cached, total_due=len(cached))
+
+        raise HTTPException(
+            status_code=503, detail=f"Failed to fetch due cards from Mochi: {str(e)}"
+        )
 
 
 @router.post("/review", response_model=ReviewResponse)
 async def submit_review(
     req: ReviewRequest,
-    scheduler: FSRSScheduler = Depends(get_fsrs_scheduler),
-    storage: ReviewStorage = Depends(get_review_storage),
+    mochi: MochiClient = Depends(get_mochi_client),
+    cache: ReviewCache = Depends(get_review_cache),
 ):
+    """
+    Submit a section review.
+
+    Tracks section reviews locally. When all sections of a card are reviewed,
+    syncs the aggregate result to Mochi (forgot if ANY section was forgot).
+    """
     logger.info(
-        f"Review submitted: user={req.user_id}, deck={req.deck_id}, card={req.card_id}, section={req.section_index}, rating={req.rating}"
+        f"Review submitted: card={req.card_id}, section={req.section_index}, "
+        f"remembered={req.remembered}"
     )
 
-    if req.rating not in [1, 2, 3, 4]:
-        raise HTTPException(
-            status_code=400,
-            detail="Rating must be 1-4 (1=Again, 2=Hard, 3=Good, 4=Easy)",
+    # Record this section's review
+    progress = cache.record_section_review(
+        card_id=req.card_id,
+        section_index=req.section_index,
+        remembered=req.remembered,
+        total_sections=req.total_sections,
+    )
+
+    # Check if all sections are reviewed
+    if progress.is_complete():
+        aggregate_result = progress.get_aggregate_result()
+        logger.info(
+            f"Card {req.card_id} complete. Aggregate result: "
+            f"{'remembered' if aggregate_result else 'forgot'}"
         )
 
-    state = storage.get_card_state(
-        req.user_id, req.deck_id, req.card_id, req.section_index
-    )
+        # Sync to Mochi
+        try:
+            mochi.update_card_review(req.card_id, remembered=aggregate_result)
+            logger.info(f"Synced card {req.card_id} to Mochi")
 
-    if not state:
-        state = storage.create_card_state(
-            req.user_id, req.deck_id, req.card_id, req.section_index
-        )
+            # Clear in-progress tracking
+            cache.complete_card_review(req.card_id)
 
-    updated_state, log = scheduler.review_card(state, req.rating)
+            # Clear due cards cache since it's now stale
+            cache.clear_cache()
 
-    storage.update_card_state(
-        req.user_id, req.deck_id, req.card_id, req.section_index, updated_state
-    )
-    storage.save_review_log(
-        req.user_id, req.deck_id, req.card_id, req.section_index, log
-    )
-
-    logger.info(
-        f"Review processed: next_review={updated_state['due_date']}, difficulty={updated_state['difficulty']:.2f}"
-    )
-
-    return ReviewResponse(
-        success=True,
-        next_review_date=updated_state["due_date"],
-        difficulty=updated_state["difficulty"],
-        stability=updated_state["stability"],
-        state=updated_state["state"],
-    )
-
-
-@router.get("/review/due")
-async def get_due_cards(
-    user_id: str,
-    deck_id: str,
-    cache: Dict[str, Deck] = Depends(get_deck_cache),
-    storage: ReviewStorage = Depends(get_review_storage),
-):
-    logger.info(f"Getting due cards: user={user_id}, deck={deck_id}")
-
-    # Handle "all" deck - combine due cards from all decks
-    if deck_id == "all":
-        all_cards_list = []
-        for actual_deck_id in cache.keys():
-            try:
-                # Get due cards for this deck
-                deck = cache[actual_deck_id]
-                all_states = storage._load_user_data(user_id, actual_deck_id)
-                has_any_states = len(all_states.get("card_states", {})) > 0
-                due_states = storage.get_due_cards(user_id, actual_deck_id)
-
-                # If no states exist, initialize all cards as due
-                if not has_any_states:
-                    for card in deck.cards:
-                        sections_list = []
-                        for section_index in range(len(card.sections)):
-                            state = storage.create_card_state(
-                                user_id, actual_deck_id, card.id, section_index
-                            )
-                            sections_list.append(
-                                {
-                                    "section_index": section_index,
-                                    "due_date": state["due_date"],
-                                    "difficulty": state["difficulty"],
-                                    "reps": state["reps"],
-                                    "state": state["state"],
-                                }
-                            )
-                        card_dict = card.model_dump()
-                        card_dict["deck_id"] = actual_deck_id  # Add actual deck ID
-                        all_cards_list.append(
-                            {"card": card_dict, "due_sections": sections_list}
-                        )
-                else:
-                    # Build map of due cards for this deck
-                    cards_map = {}
-                    for state in due_states:
-                        card_id = state["card_id"]
-                        if card_id not in cards_map:
-                            card = next(
-                                (c for c in deck.cards if c.id == card_id), None
-                            )
-                            if not card:
-                                logger.warning(
-                                    f"Card {card_id} not found in deck {actual_deck_id}"
-                                )
-                                continue
-                            card_dict = card.model_dump()
-                            card_dict["deck_id"] = actual_deck_id  # Add actual deck ID
-                            cards_map[card_id] = {
-                                "card": card_dict,
-                                "due_sections": [],
-                            }
-
-                        cards_map[card_id]["due_sections"].append(
-                            {
-                                "section_index": state["section_index"],
-                                "due_date": state["due_date"],
-                                "difficulty": state["difficulty"],
-                                "reps": state["reps"],
-                                "state": state["state"],
-                            }
-                        )
-                    all_cards_list.extend(list(cards_map.values()))
-            except Exception as e:
-                logger.error(f"Error loading due cards for deck {actual_deck_id}: {e}")
-                continue
-
-        return {
-            "cards": all_cards_list,
-            "total_due": sum(len(c["due_sections"]) for c in all_cards_list),
-        }
-
-    if deck_id not in cache:
-        raise HTTPException(status_code=404, detail=f"Deck not found: {deck_id}")
-
-    deck = cache[deck_id]
-
-    all_states = storage._load_user_data(user_id, deck_id)
-    has_any_states = len(all_states.get("card_states", {})) > 0
-
-    due_states = storage.get_due_cards(user_id, deck_id)
-
-    if not has_any_states:
-        cards_list = []
-        for card in deck.cards:
-            sections_list = []
-            for section_index in range(len(card.sections)):
-                state = storage.create_card_state(
-                    user_id, deck_id, card.id, section_index
-                )
-                sections_list.append(
-                    {
-                        "section_index": section_index,
-                        "due_date": state["due_date"],
-                        "difficulty": state["difficulty"],
-                        "reps": state["reps"],
-                        "state": state["state"],
-                    }
-                )
-
-            cards_list.append(
-                {"card": card.model_dump(), "due_sections": sections_list}
+            return ReviewResponse(
+                success=True,
+                card_complete=True,
+                synced_to_mochi=True,
+                sections_reviewed=len(progress.section_reviews),
+                total_sections=req.total_sections,
+                aggregate_remembered=aggregate_result,
             )
 
-        return {
-            "cards": cards_list,
-            "total_due": sum(len(c["due_sections"]) for c in cards_list),
-        }
+        except Exception as e:
+            logger.error(f"Failed to sync to Mochi: {e}")
+            raise HTTPException(
+                status_code=503,
+                detail=f"Failed to sync review to Mochi: {str(e)}",
+            )
 
-    cards_map = {}
-    for state in due_states:
-        card_id = state["card_id"]
-        if card_id not in cards_map:
-            card = next((c for c in deck.cards if c.id == card_id), None)
-            if not card:
-                logger.warning(f"Card {card_id} not found in deck {deck_id}")
-                continue
-
-            cards_map[card_id] = {"card": card.model_dump(), "due_sections": []}
-
-        cards_map[card_id]["due_sections"].append(
-            {
-                "section_index": state["section_index"],
-                "due_date": state["due_date"],
-                "difficulty": state["difficulty"],
-                "reps": state["reps"],
-                "state": state["state"],
-            }
-        )
-
-    cards_list = list(cards_map.values())
-
-    logger.info(f"Found {len(cards_list)} cards with due sections")
-
-    return {
-        "cards": cards_list,
-        "total_due": sum(len(c["due_sections"]) for c in cards_list),
-    }
-
-
-@router.post("/review/reset", response_model=ResetResponse)
-async def reset_reviews(
-    req: ResetRequest, storage: ReviewStorage = Depends(get_review_storage)
-):
-    logger.info(f"Resetting reviews: user={req.user_id}, deck={req.deck_id}")
-
-    cards_reset = storage.reset_reviews_for_today(req.user_id, req.deck_id)
-
-    logger.info(f"Reset {cards_reset} cards for user {req.user_id}, deck {req.deck_id}")
-
-    return ResetResponse(success=True, cards_reset=cards_reset)
+    # Not complete yet, just record locally
+    return ReviewResponse(
+        success=True,
+        card_complete=False,
+        synced_to_mochi=False,
+        sections_reviewed=len(progress.section_reviews),
+        total_sections=req.total_sections,
+        aggregate_remembered=None,
+    )

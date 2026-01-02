@@ -1,7 +1,11 @@
 import { useEffect, useRef } from "react";
-import { parseAnsi } from "../utils/ansiParser";
 
-export const OutputPanel = ({ output, isRunning, elapsedMs, onClear }) => {
+const LANGUAGE_COMMANDS = {
+  python: "python3 solution.py",
+  ruby: "ruby solution.rb",
+};
+
+export const OutputPanel = ({ output, isRunning, elapsedMs, onClear, language = "python" }) => {
   const outputRef = useRef(null);
 
   useEffect(() => {
@@ -15,6 +19,10 @@ export const OutputPanel = ({ output, isRunning, elapsedMs, onClear }) => {
     return `${(ms / 1000).toFixed(1)}s`;
   };
 
+  // Use output.language if available, otherwise fall back to prop
+  const displayLanguage = output?.language || language;
+  const command = LANGUAGE_COMMANDS[displayLanguage] || `${displayLanguage} solution`;
+
   const renderOutput = () => {
     if (isRunning && !output) {
       return (
@@ -22,7 +30,7 @@ export const OutputPanel = ({ output, isRunning, elapsedMs, onClear }) => {
           <div className="flex gap-2">
             <span className="text-secondary">➜</span>
             <span className="text-primary">~</span>
-            <span>python3 solution.py</span>
+            <span>{command}</span>
           </div>
           <div className="mt-2 text-content pl-4 border-l border-border">
             Running... {formatTime(elapsedMs)}
@@ -38,7 +46,7 @@ export const OutputPanel = ({ output, isRunning, elapsedMs, onClear }) => {
           <div className="flex gap-2">
             <span className="text-secondary">➜</span>
             <span className="text-primary">~</span>
-            <span>python3 solution.py</span>
+            <span>{command}</span>
           </div>
           <div className="mt-2 text-content pl-4 border-l border-border">
             Waiting for input...
@@ -55,7 +63,7 @@ export const OutputPanel = ({ output, isRunning, elapsedMs, onClear }) => {
         <div className="flex gap-2">
           <span className="text-secondary">➜</span>
           <span className="text-primary">~</span>
-          <span>python3 solution.py</span>
+          <span>{command}</span>
         </div>
         <div className="mt-2 text-content pl-4 border-l border-border whitespace-pre-wrap">
           {combined.trim() || "(no output)"}

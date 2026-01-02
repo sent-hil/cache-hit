@@ -4,44 +4,17 @@ import { userEvent } from "@testing-library/user-event";
 import { RatingButtonsEnhanced } from "./RatingButtonsEnhanced";
 
 describe("RatingButtonsEnhanced", () => {
-  it("should render all four rating buttons with labels", () => {
+  it("should render Forgot and Remembered buttons", () => {
     render(<RatingButtonsEnhanced onRate={vi.fn()} />);
 
-    expect(screen.getByText("Again")).toBeInTheDocument();
-    expect(screen.getByText("Hard")).toBeInTheDocument();
-    expect(screen.getByText("Good")).toBeInTheDocument();
-    expect(screen.getByText("Easy")).toBeInTheDocument();
+    expect(screen.getByText("Forgot")).toBeInTheDocument();
+    expect(screen.getByText("Remembered")).toBeInTheDocument();
   });
 
-  it("should show default intervals when not provided", () => {
+  it("should show MOCHI SYNC badge", () => {
     render(<RatingButtonsEnhanced onRate={vi.fn()} />);
 
-    expect(screen.getByText("< 1m")).toBeInTheDocument();
-    expect(screen.getByText("2d")).toBeInTheDocument();
-    expect(screen.getByText("5d")).toBeInTheDocument();
-    expect(screen.getByText("8d")).toBeInTheDocument();
-  });
-
-  it("should show custom intervals when provided", () => {
-    const intervals = {
-      again: "30s",
-      hard: "1d",
-      good: "3d",
-      easy: "7d",
-    };
-
-    render(<RatingButtonsEnhanced onRate={vi.fn()} intervals={intervals} />);
-
-    expect(screen.getByText("30s")).toBeInTheDocument();
-    expect(screen.getByText("1d")).toBeInTheDocument();
-    expect(screen.getByText("3d")).toBeInTheDocument();
-    expect(screen.getByText("7d")).toBeInTheDocument();
-  });
-
-  it("should show FSRS badge", () => {
-    render(<RatingButtonsEnhanced onRate={vi.fn()} />);
-
-    expect(screen.getByText("FSRS v4.5 ENABLED")).toBeInTheDocument();
+    expect(screen.getByText("MOCHI SYNC")).toBeInTheDocument();
   });
 
   it("should show review summary header", () => {
@@ -49,27 +22,28 @@ describe("RatingButtonsEnhanced", () => {
 
     expect(screen.getByText("Review Summary")).toBeInTheDocument();
     expect(
-      screen.getByText("Select recall difficulty to complete this card.")
+      screen.getByText("Did you remember this card?")
     ).toBeInTheDocument();
   });
 
-  it("should call onRate with correct rating when button is clicked", async () => {
+  it("should call onRate with false when Forgot is clicked", async () => {
     const user = userEvent.setup();
     const handleRate = vi.fn();
 
     render(<RatingButtonsEnhanced onRate={handleRate} />);
 
-    await user.click(screen.getByText("Again"));
-    expect(handleRate).toHaveBeenCalledWith(1);
+    await user.click(screen.getByText("Forgot"));
+    expect(handleRate).toHaveBeenCalledWith(false);
+  });
 
-    await user.click(screen.getByText("Hard"));
-    expect(handleRate).toHaveBeenCalledWith(2);
+  it("should call onRate with true when Remembered is clicked", async () => {
+    const user = userEvent.setup();
+    const handleRate = vi.fn();
 
-    await user.click(screen.getByText("Good"));
-    expect(handleRate).toHaveBeenCalledWith(3);
+    render(<RatingButtonsEnhanced onRate={handleRate} />);
 
-    await user.click(screen.getByText("Easy"));
-    expect(handleRate).toHaveBeenCalledWith(4);
+    await user.click(screen.getByText("Remembered"));
+    expect(handleRate).toHaveBeenCalledWith(true);
   });
 
   it("should disable all buttons when disabled prop is true", () => {
@@ -78,7 +52,7 @@ describe("RatingButtonsEnhanced", () => {
     const buttons = screen
       .getAllByRole("button")
       .filter((btn) =>
-        ["Again", "Hard", "Good", "Easy"].some((label) =>
+        ["Forgot", "Remembered"].some((label) =>
           btn.textContent.includes(label)
         )
       );
@@ -94,8 +68,8 @@ describe("RatingButtonsEnhanced", () => {
 
     render(<RatingButtonsEnhanced onRate={handleRate} disabled={true} />);
 
-    await user.click(screen.getByText("Again"));
-    await user.click(screen.getByText("Good"));
+    await user.click(screen.getByText("Forgot"));
+    await user.click(screen.getByText("Remembered"));
 
     expect(handleRate).not.toHaveBeenCalled();
   });

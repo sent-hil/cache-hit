@@ -1,42 +1,32 @@
 import { useState, useCallback } from "react";
-
-const API_URL = "http://localhost:8000";
+import { api } from "../utils/api";
 
 export const useReview = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [syncError, setSyncError] = useState(null);
 
   const submitReview = useCallback(
-    async (userId, deckId, cardId, sectionIndex, rating) => {
+    async (cardId, sectionIndex, remembered, totalSections) => {
       setSubmitting(true);
       setError(null);
+      setSyncError(null);
 
       try {
-        const response = await fetch(`${API_URL}/api/review`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            user_id: userId,
-            deck_id: deckId,
-            card_id: cardId,
-            section_index: sectionIndex,
-            rating: rating,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response
-            .json()
-            .catch(() => ({ detail: "Failed to submit review" }));
-          throw new Error(errorData.detail || "Failed to submit review");
-        }
-
-        const data = await response.json();
+        const data = await api.submitReview(
+          cardId,
+          sectionIndex,
+          remembered,
+          totalSections
+        );
         return data;
       } catch (err) {
-        setError(err.message);
+        // Check if it's a Mochi sync error (503)
+        if (err.message.includes("sync") || err.message.includes("Mochi")) {
+          setSyncError(err.message);
+        } else {
+          setError(err.message);
+        }
         throw err;
       } finally {
         setSubmitting(false);
@@ -45,9 +35,15 @@ export const useReview = () => {
     []
   );
 
+  const clearSyncError = useCallback(() => {
+    setSyncError(null);
+  }, []);
+
   return {
     submitReview,
     submitting,
     error,
+    syncError,
+    clearSyncError,
   };
 };

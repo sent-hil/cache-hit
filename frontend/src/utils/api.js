@@ -7,7 +7,6 @@ export const api = {
       throw new Error("Health check failed");
     }
     const data = await response.json();
-    // Check if status is 'ok' (all containers running)
     if (data.status !== "ok") {
       throw new Error("Backend containers not ready");
     }
@@ -40,55 +39,36 @@ export const api = {
     return result;
   },
 
-  async listDecks() {
-    const response = await fetch(`${API_URL}/api/decks`);
+  async getDueCards() {
+    const response = await fetch(`${API_URL}/api/due`);
     if (!response.ok) {
       const error = await response
         .json()
         .catch(() => ({ detail: "Unknown error" }));
-      throw new Error(error.detail || "Failed to list decks");
+      throw new Error(error.detail || "Failed to load due cards");
     }
     return response.json();
   },
 
-  async getDeck(deckId) {
-    const response = await fetch(`${API_URL}/api/decks/${deckId}`);
-    if (!response.ok) {
-      const error = await response
-        .json()
-        .catch(() => ({ detail: "Unknown error" }));
-      throw new Error(error.detail || "Failed to load deck");
-    }
-    return response.json();
-  },
-
-  async getCard(deckId, cardIndex) {
-    const response = await fetch(
-      `${API_URL}/api/decks/${deckId}/cards/${cardIndex}`
-    );
-    if (!response.ok) {
-      const error = await response
-        .json()
-        .catch(() => ({ detail: "Unknown error" }));
-      throw new Error(error.detail || "Failed to load card");
-    }
-    return response.json();
-  },
-
-  async resetReviews(userId, deckId) {
-    const response = await fetch(`${API_URL}/api/review/reset`, {
+  async submitReview(cardId, sectionIndex, remembered, totalSections) {
+    const response = await fetch(`${API_URL}/api/review`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ user_id: userId, deck_id: deckId }),
+      body: JSON.stringify({
+        card_id: cardId,
+        section_index: sectionIndex,
+        remembered: remembered,
+        total_sections: totalSections,
+      }),
     });
 
     if (!response.ok) {
       const error = await response
         .json()
         .catch(() => ({ detail: "Unknown error" }));
-      throw new Error(error.detail || "Failed to reset reviews");
+      throw new Error(error.detail || "Failed to submit review");
     }
 
     return response.json();

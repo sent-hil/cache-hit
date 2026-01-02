@@ -1,219 +1,272 @@
+"""Tests for the Mochi-integrated review router."""
+
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
 
-from main import app
-from review_router import get_review_storage
+from mochi_client import Card, Section
+from review_router import get_mochi_client, get_review_cache
+from review_storage import ReviewCache
+
+# Mock cards for testing
+MOCK_CARDS = [
+    Card(
+        id="card1",
+        content="Question 1\n---\nAnswer 1",
+        deck_id="deck1",
+        sections=[Section(question="Question 1", answer="Answer 1")],
+        name="Card 1",
+    ),
+    Card(
+        id="card2",
+        content="Q2 Part A\n---\nA2 Part A\n---\nQ2 Part B\n---\nA2 Part B",
+        deck_id="deck1",
+        sections=[
+            Section(question="Q2 Part A", answer="A2 Part A"),
+            Section(question="Q2 Part B", answer="A2 Part B"),
+        ],
+        name="Card 2",
+    ),
+]
 
 
 @pytest.fixture
-def client():
-    with TestClient(app) as test_client:
+def mock_mochi_client():
+    """Create a mock MochiClient."""
+    mock = MagicMock()
+    mock.get_due_cards.return_value = MOCK_CARDS
+    mock.update_card_review.return_value = {"success": True}
+    return mock
+
+
+@pytest.fixture
+def mock_review_cache():
+    """Create a fresh ReviewCache for each test."""
+    cache = ReviewCache(cache_dir="test_review_cache")
+    yield cache
+    # Cleanup
+    cache_dir = Path("test_review_cache")
+    if cache_dir.exists():
+        for file in cache_dir.glob("*"):
+            file.unlink()
+        cache_dir.rmdir()
+
+
+@pytest.fixture
+def client(mock_mochi_client, mock_review_cache):
+    """Create a test client with mocked dependencies."""
+    # Import app here to avoid loading before mocks are set up
+    from main import app
+
+    # Override dependencies
+    app.dependency_overrides[get_mochi_client] = lambda: mock_mochi_client
+    app.dependency_overrides[get_review_cache] = lambda: mock_review_cache
+
+    with TestClient(app, raise_server_exceptions=False) as test_client:
         yield test_client
 
-
-@pytest.fixture
-def clear_review_data():
-    storage = get_review_storage()
-    review_data_dir = Path(storage.data_dir)
-    if review_data_dir.exists():
-        for file in review_data_dir.glob("test_*.json"):
-            file.unlink()
-    yield
-    if review_data_dir.exists():
-        for file in review_data_dir.glob("test_*.json"):
-            file.unlink()
-
-
-class TestSubmitReview:
-    def test_submit_valid_review_again(self, client, clear_review_data):
-        response = client.post(
-            "/api/review",
-            json={
-                "user_id": "test_user",
-                "deck_id": "QhL3SFpO",
-                "card_id": "test_card",
-                "section_index": 0,
-                "rating": 1,
-            },
-        )
-
-        assert response.status_code == 200
-        data = response.json()
-        assert data["success"] is True
-        assert "next_review_date" in data
-        assert data["difficulty"] > 0
-        assert data["stability"] >= 0
-        assert data["state"] in ["learning", "review", "relearning"]
-
-    def test_submit_valid_review_hard(self, client, clear_review_data):
-        response = client.post(
-            "/api/review",
-            json={
-                "user_id": "test_user",
-                "deck_id": "QhL3SFpO",
-                "card_id": "test_card",
-                "section_index": 0,
-                "rating": 2,
-            },
-        )
-
-        assert response.status_code == 200
-        data = response.json()
-        assert data["success"] is True
-
-    def test_submit_valid_review_good(self, client, clear_review_data):
-        response = client.post(
-            "/api/review",
-            json={
-                "user_id": "test_user",
-                "deck_id": "QhL3SFpO",
-                "card_id": "test_card",
-                "section_index": 0,
-                "rating": 3,
-            },
-        )
-
-        assert response.status_code == 200
-        data = response.json()
-        assert data["success"] is True
-
-    def test_submit_valid_review_easy(self, client, clear_review_data):
-        response = client.post(
-            "/api/review",
-            json={
-                "user_id": "test_user",
-                "deck_id": "QhL3SFpO",
-                "card_id": "test_card",
-                "section_index": 0,
-                "rating": 4,
-            },
-        )
-
-        assert response.status_code == 200
-        data = response.json()
-        assert data["success"] is True
-
-    def test_submit_invalid_rating_zero(self, client, clear_review_data):
-        response = client.post(
-            "/api/review",
-            json={
-                "user_id": "test_user",
-                "deck_id": "QhL3SFpO",
-                "card_id": "test_card",
-                "section_index": 0,
-                "rating": 0,
-            },
-        )
-
-        assert response.status_code == 400
-        assert "rating must be 1-4" in response.json()["detail"].lower()
-
-    def test_submit_invalid_rating_five(self, client, clear_review_data):
-        response = client.post(
-            "/api/review",
-            json={
-                "user_id": "test_user",
-                "deck_id": "QhL3SFpO",
-                "card_id": "test_card",
-                "section_index": 0,
-                "rating": 5,
-            },
-        )
-
-        assert response.status_code == 400
-        assert "rating must be 1-4" in response.json()["detail"].lower()
-
-    def test_submit_review_updates_state(self, client, clear_review_data):
-        response1 = client.post(
-            "/api/review",
-            json={
-                "user_id": "test_user",
-                "deck_id": "QhL3SFpO",
-                "card_id": "test_card",
-                "section_index": 0,
-                "rating": 4,
-            },
-        )
-
-        response2 = client.post(
-            "/api/review",
-            json={
-                "user_id": "test_user",
-                "deck_id": "QhL3SFpO",
-                "card_id": "test_card",
-                "section_index": 0,
-                "rating": 4,
-            },
-        )
-
-        assert response1.status_code == 200
-        assert response2.status_code == 200
-        date1 = response1.json()["next_review_date"]
-        date2 = response2.json()["next_review_date"]
-        assert date2 > date1
+    # Clear overrides
+    app.dependency_overrides.clear()
 
 
 class TestGetDueCards:
-    def test_get_due_cards_first_time(self, client, clear_review_data):
-        response = client.get("/api/review/due?user_id=test_user&deck_id=QhL3SFpO")
+    def test_get_due_cards_returns_cards(self, client, mock_mochi_client):
+        response = client.get("/api/due")
 
         assert response.status_code == 200
         data = response.json()
         assert "cards" in data
         assert "total_due" in data
-        assert len(data["cards"]) > 0
-        assert data["total_due"] > 0
+        assert len(data["cards"]) == 2
+        assert data["total_due"] == 2
+        mock_mochi_client.get_due_cards.assert_called_once()
 
-    def test_get_due_cards_from_nonexistent_deck(self, client, clear_review_data):
-        response = client.get("/api/review/due?user_id=test_user&deck_id=NONEXISTENT")
-
-        assert response.status_code == 404
-        assert "not found" in response.json()["detail"].lower()
-
-    def test_get_due_cards_after_review(self, client, clear_review_data):
-        response1 = client.get("/api/review/due?user_id=test_user2&deck_id=QhL3SFpO")
-        initial_count = response1.json()["total_due"]
-
-        first_card = response1.json()["cards"][0]
-        for section in first_card["due_sections"]:
-            client.post(
-                "/api/review",
-                json={
-                    "user_id": "test_user2",
-                    "deck_id": "QhL3SFpO",
-                    "card_id": first_card["card"]["id"],
-                    "section_index": section["section_index"],
-                    "rating": 4,
-                },
-            )
-
-        response2 = client.get("/api/review/due?user_id=test_user2&deck_id=QhL3SFpO")
-        final_count = response2.json()["total_due"]
-
-        assert final_count < initial_count
-
-    def test_due_cards_have_card_data(self, client, clear_review_data):
-        response = client.get("/api/review/due?user_id=test_user3&deck_id=QhL3SFpO")
+    def test_get_due_cards_includes_sections(self, client):
+        response = client.get("/api/due")
 
         assert response.status_code == 200
         data = response.json()
         first_card = data["cards"][0]
-        assert "card" in first_card
-        assert "due_sections" in first_card
-        assert "id" in first_card["card"]
-        assert "sections" in first_card["card"]
-        assert len(first_card["due_sections"]) > 0
+        assert "sections" in first_card
+        assert "total_sections" in first_card
+        assert first_card["total_sections"] == 1
 
-    def test_due_sections_have_review_data(self, client, clear_review_data):
-        response = client.get("/api/review/due?user_id=test_user4&deck_id=QhL3SFpO")
+        second_card = data["cards"][1]
+        assert second_card["total_sections"] == 2
+
+    def test_get_due_cards_mochi_error_returns_cached(
+        self, client, mock_mochi_client, mock_review_cache
+    ):
+        # Pre-populate cache
+        mock_review_cache.cache_due_cards([{"id": "cached_card", "content": "cached"}])
+
+        # Make Mochi fail
+        mock_mochi_client.get_due_cards.side_effect = Exception("Mochi unavailable")
+
+        response = client.get("/api/due")
 
         assert response.status_code == 200
         data = response.json()
-        first_section = data["cards"][0]["due_sections"][0]
-        assert "section_index" in first_section
-        assert "due_date" in first_section
-        assert "difficulty" in first_section
-        assert "reps" in first_section
-        assert "state" in first_section
+        assert len(data["cards"]) == 1
+        assert data["cards"][0]["id"] == "cached_card"
+
+
+class TestSubmitReview:
+    def test_submit_single_section_review(self, client, mock_mochi_client):
+        response = client.post(
+            "/api/review",
+            json={
+                "card_id": "card1",
+                "section_index": 0,
+                "remembered": True,
+                "total_sections": 1,
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+        assert data["card_complete"] is True
+        assert data["synced_to_mochi"] is True
+        assert data["aggregate_remembered"] is True
+        mock_mochi_client.update_card_review.assert_called_once_with(
+            "card1", remembered=True
+        )
+
+    def test_submit_multi_section_first_section(self, client, mock_mochi_client):
+        response = client.post(
+            "/api/review",
+            json={
+                "card_id": "card2",
+                "section_index": 0,
+                "remembered": True,
+                "total_sections": 2,
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+        assert data["card_complete"] is False
+        assert data["synced_to_mochi"] is False
+        assert data["sections_reviewed"] == 1
+        mock_mochi_client.update_card_review.assert_not_called()
+
+    def test_submit_multi_section_completes_card(self, client, mock_mochi_client):
+        # First section
+        client.post(
+            "/api/review",
+            json={
+                "card_id": "card2",
+                "section_index": 0,
+                "remembered": True,
+                "total_sections": 2,
+            },
+        )
+
+        # Second section - should complete
+        response = client.post(
+            "/api/review",
+            json={
+                "card_id": "card2",
+                "section_index": 1,
+                "remembered": True,
+                "total_sections": 2,
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["card_complete"] is True
+        assert data["synced_to_mochi"] is True
+        assert data["aggregate_remembered"] is True
+        mock_mochi_client.update_card_review.assert_called_once_with(
+            "card2", remembered=True
+        )
+
+    def test_aggregate_forgot_if_any_forgot(self, client, mock_mochi_client):
+        # First section - remembered
+        client.post(
+            "/api/review",
+            json={
+                "card_id": "card2",
+                "section_index": 0,
+                "remembered": True,
+                "total_sections": 2,
+            },
+        )
+
+        # Second section - forgot
+        response = client.post(
+            "/api/review",
+            json={
+                "card_id": "card2",
+                "section_index": 1,
+                "remembered": False,
+                "total_sections": 2,
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["aggregate_remembered"] is False
+        mock_mochi_client.update_card_review.assert_called_once_with(
+            "card2", remembered=False
+        )
+
+    def test_mochi_sync_error_returns_503(self, client, mock_mochi_client):
+        mock_mochi_client.update_card_review.side_effect = Exception("Mochi error")
+
+        response = client.post(
+            "/api/review",
+            json={
+                "card_id": "card1",
+                "section_index": 0,
+                "remembered": True,
+                "total_sections": 1,
+            },
+        )
+
+        assert response.status_code == 503
+        assert "sync" in response.json()["detail"].lower()
+
+
+class TestReviewCache:
+    def test_cache_stores_due_cards(self, mock_review_cache):
+        cards = [{"id": "test1"}, {"id": "test2"}]
+        mock_review_cache.cache_due_cards(cards)
+
+        cached = mock_review_cache.get_cached_due_cards()
+        assert cached == cards
+
+    def test_section_review_tracking(self, mock_review_cache):
+        progress = mock_review_cache.record_section_review(
+            card_id="card1", section_index=0, remembered=True, total_sections=2
+        )
+
+        assert progress.card_id == "card1"
+        assert len(progress.section_reviews) == 1
+        assert progress.is_complete() is False
+
+    def test_section_review_completes(self, mock_review_cache):
+        mock_review_cache.record_section_review(
+            card_id="card1", section_index=0, remembered=True, total_sections=2
+        )
+        progress = mock_review_cache.record_section_review(
+            card_id="card1", section_index=1, remembered=True, total_sections=2
+        )
+
+        assert progress.is_complete() is True
+        assert progress.get_aggregate_result() is True
+
+    def test_aggregate_false_if_any_forgot(self, mock_review_cache):
+        mock_review_cache.record_section_review(
+            card_id="card1", section_index=0, remembered=True, total_sections=2
+        )
+        progress = mock_review_cache.record_section_review(
+            card_id="card1", section_index=1, remembered=False, total_sections=2
+        )
+
+        assert progress.get_aggregate_result() is False

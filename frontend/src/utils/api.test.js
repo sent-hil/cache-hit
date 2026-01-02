@@ -118,86 +118,18 @@ describe("api", () => {
     });
   });
 
-  describe("getDeck", () => {
-    it("should fetch deck successfully", async () => {
-      const mockDeck = {
-        id: "QhL3SFpO",
-        name: "Python",
-        total_cards: 2,
-        cards: [],
-      };
-
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockDeck,
-      });
-
-      const result = await api.getDeck("QhL3SFpO");
-
-      expect(fetch).toHaveBeenCalledWith(
-        "http://localhost:8000/api/decks/QhL3SFpO"
-      );
-      expect(result).toEqual(mockDeck);
-    });
-
-    it("should throw error when deck not found", async () => {
-      fetch.mockResolvedValueOnce({
-        ok: false,
-        json: async () => ({ detail: "Deck not found" }),
-      });
-
-      await expect(api.getDeck("INVALID")).rejects.toThrow("Deck not found");
-    });
-
-    it("should handle json parse error", async () => {
-      fetch.mockResolvedValueOnce({
-        ok: false,
-        json: async () => {
-          throw new Error("Parse error");
-        },
-      });
-
-      await expect(api.getDeck("test")).rejects.toThrow("Unknown error");
-    });
-  });
-
-  describe("getCard", () => {
-    it("should fetch card successfully", async () => {
-      const mockCard = {
-        id: "card1",
-        sections: [{ question: "Q1", answer_code: "A1" }],
-      };
-
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockCard,
-      });
-
-      const result = await api.getCard("QhL3SFpO", 0);
-
-      expect(fetch).toHaveBeenCalledWith(
-        "http://localhost:8000/api/decks/QhL3SFpO/cards/0"
-      );
-      expect(result).toEqual(mockCard);
-    });
-
-    it("should throw error when card not found", async () => {
-      fetch.mockResolvedValueOnce({
-        ok: false,
-        json: async () => ({ detail: "Card index out of range" }),
-      });
-
-      await expect(api.getCard("QhL3SFpO", 999)).rejects.toThrow(
-        "Card index out of range"
-      );
-    });
-  });
-
-  describe("resetReviews", () => {
-    it("should reset reviews successfully", async () => {
+  describe("getDueCards", () => {
+    it("should fetch due cards successfully", async () => {
       const mockResponse = {
-        success: true,
-        cards_reset: 5,
+        cards: [
+          {
+            id: "card1",
+            name: "Test Card",
+            sections: [{ question: "Q1", answer: "A1" }],
+            total_sections: 1,
+          },
+        ],
+        total_due: 1,
       };
 
       fetch.mockResolvedValueOnce({
@@ -205,27 +137,99 @@ describe("api", () => {
         json: async () => mockResponse,
       });
 
-      const result = await api.resetReviews("user1", "QhL3SFpO");
+      const result = await api.getDueCards();
 
-      expect(fetch).toHaveBeenCalledWith(
-        "http://localhost:8000/api/review/reset",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user_id: "user1", deck_id: "QhL3SFpO" }),
-        }
-      );
+      expect(fetch).toHaveBeenCalledWith("http://localhost:8000/api/due");
       expect(result).toEqual(mockResponse);
     });
 
-    it("should throw error when reset fails", async () => {
+    it("should throw error when fetch fails", async () => {
       fetch.mockResolvedValueOnce({
         ok: false,
-        json: async () => ({ detail: "Reset failed" }),
+        json: async () => ({ detail: "Mochi unavailable" }),
       });
 
-      await expect(api.resetReviews("user1", "QhL3SFpO")).rejects.toThrow(
-        "Reset failed"
+      await expect(api.getDueCards()).rejects.toThrow("Mochi unavailable");
+    });
+
+    it("should handle json parse error", async () => {
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        json: async () => {
+          throw new Error("Parse error");
+        },
+      });
+
+      await expect(api.getDueCards()).rejects.toThrow("Unknown error");
+    });
+  });
+
+  describe("submitReview", () => {
+    it("should submit review successfully", async () => {
+      const mockResponse = {
+        success: true,
+        card_complete: true,
+        synced_to_mochi: true,
+        sections_reviewed: 1,
+        total_sections: 1,
+        aggregate_remembered: true,
+      };
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const result = await api.submitReview("card1", 0, true, 1);
+
+      expect(fetch).toHaveBeenCalledWith("http://localhost:8000/api/review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          card_id: "card1",
+          section_index: 0,
+          remembered: true,
+          total_sections: 1,
+        }),
+      });
+      expect(result).toEqual(mockResponse);
+    });
+
+    it("should submit review with remembered false", async () => {
+      const mockResponse = {
+        success: true,
+        card_complete: true,
+        synced_to_mochi: true,
+        aggregate_remembered: false,
+      };
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      await api.submitReview("card1", 0, false, 1);
+
+      expect(fetch).toHaveBeenCalledWith("http://localhost:8000/api/review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          card_id: "card1",
+          section_index: 0,
+          remembered: false,
+          total_sections: 1,
+        }),
+      });
+    });
+
+    it("should throw error when submit fails", async () => {
+      fetch.mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ detail: "Failed to sync review to Mochi" }),
+      });
+
+      await expect(api.submitReview("card1", 0, true, 1)).rejects.toThrow(
+        "Failed to sync review to Mochi"
       );
     });
 
@@ -237,7 +241,7 @@ describe("api", () => {
         },
       });
 
-      await expect(api.resetReviews("user1", "QhL3SFpO")).rejects.toThrow(
+      await expect(api.submitReview("card1", 0, true, 1)).rejects.toThrow(
         "Unknown error"
       );
     });

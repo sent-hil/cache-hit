@@ -16,25 +16,63 @@ import requests
 
 
 @dataclass
+class Section:
+    """Represents a Q&A section within a card."""
+
+    question: str
+    answer: str
+
+
+@dataclass
 class Card:
     """Represents a Mochi card."""
 
     id: str
     content: str
     deck_id: str
+    sections: list[Section]
     name: Optional[str] = None
     reviews: Optional[list] = None
 
     @classmethod
     def from_api_response(cls, data: dict) -> "Card":
         """Create a Card from API response data."""
+        content = data.get("content", "")
+        sections = cls._parse_sections(content)
+
         return cls(
             id=data.get("id", ""),
-            content=data.get("content", ""),
+            content=content,
             deck_id=data.get("deck-id", ""),
+            sections=sections,
             name=data.get("name"),
             reviews=data.get("reviews"),
         )
+
+    @staticmethod
+    def _parse_sections(content: str) -> list[Section]:
+        """Parse card content into Q&A sections.
+
+        Content format: question1\n---\nanswer1\n---\nquestion2\n---\nanswer2...
+        """
+        if not content:
+            return []
+
+        parts = [p.strip() for p in content.split("---")]
+        sections = []
+
+        # Pair up parts as question/answer
+        for i in range(0, len(parts) - 1, 2):
+            question = parts[i]
+            answer = parts[i + 1] if i + 1 < len(parts) else ""
+            if question:  # Only add if there's a question
+                sections.append(Section(question=question, answer=answer))
+
+        # Handle case where there's an odd number of parts (last question has no answer)
+        if len(parts) % 2 == 1 and parts[-1]:
+            sections.append(Section(question=parts[-1], answer=""))
+
+        return sections if sections else [Section(question=content, answer="")]
 
 
 class MochiClient:

@@ -4,66 +4,40 @@ import { userEvent } from "@testing-library/user-event";
 import { RatingButtons } from "./RatingButtons";
 
 describe("RatingButtons", () => {
-  it("should render all four rating buttons", () => {
+  it("should render Forgot and Remembered buttons", () => {
     render(<RatingButtons onRate={vi.fn()} />);
 
-    expect(screen.getByText("Again")).toBeInTheDocument();
-    expect(screen.getByText("Hard")).toBeInTheDocument();
-    expect(screen.getByText("Good")).toBeInTheDocument();
-    expect(screen.getByText("Easy")).toBeInTheDocument();
+    expect(screen.getByText("Forgot")).toBeInTheDocument();
+    expect(screen.getByText("Remembered")).toBeInTheDocument();
   });
 
   it("should show keyboard shortcuts", () => {
     render(<RatingButtons onRate={vi.fn()} />);
 
-    expect(screen.getByText("(1)")).toBeInTheDocument();
-    expect(screen.getByText("(2)")).toBeInTheDocument();
-    expect(screen.getByText("(3)")).toBeInTheDocument();
-    expect(screen.getByText("(4)")).toBeInTheDocument();
+    expect(screen.getByText("(F)")).toBeInTheDocument();
+    expect(screen.getByText("(R)")).toBeInTheDocument();
   });
 
-  it("should call onRate with rating 1 when Again is clicked", async () => {
+  it("should call onRate with false when Forgot is clicked", async () => {
     const user = userEvent.setup();
     const handleRate = vi.fn();
 
     render(<RatingButtons onRate={handleRate} />);
 
-    await user.click(screen.getByText("Again"));
+    await user.click(screen.getByText("Forgot"));
 
-    expect(handleRate).toHaveBeenCalledWith(1);
+    expect(handleRate).toHaveBeenCalledWith(false);
   });
 
-  it("should call onRate with rating 2 when Hard is clicked", async () => {
+  it("should call onRate with true when Remembered is clicked", async () => {
     const user = userEvent.setup();
     const handleRate = vi.fn();
 
     render(<RatingButtons onRate={handleRate} />);
 
-    await user.click(screen.getByText("Hard"));
+    await user.click(screen.getByText("Remembered"));
 
-    expect(handleRate).toHaveBeenCalledWith(2);
-  });
-
-  it("should call onRate with rating 3 when Good is clicked", async () => {
-    const user = userEvent.setup();
-    const handleRate = vi.fn();
-
-    render(<RatingButtons onRate={handleRate} />);
-
-    await user.click(screen.getByText("Good"));
-
-    expect(handleRate).toHaveBeenCalledWith(3);
-  });
-
-  it("should call onRate with rating 4 when Easy is clicked", async () => {
-    const user = userEvent.setup();
-    const handleRate = vi.fn();
-
-    render(<RatingButtons onRate={handleRate} />);
-
-    await user.click(screen.getByText("Easy"));
-
-    expect(handleRate).toHaveBeenCalledWith(4);
+    expect(handleRate).toHaveBeenCalledWith(true);
   });
 
   it("should disable all buttons when disabled prop is true", () => {
@@ -81,8 +55,8 @@ describe("RatingButtons", () => {
 
     render(<RatingButtons onRate={handleRate} disabled={true} />);
 
-    await user.click(screen.getByText("Again"));
-    await user.click(screen.getByText("Hard"));
+    await user.click(screen.getByText("Forgot"));
+    await user.click(screen.getByText("Remembered"));
 
     expect(handleRate).not.toHaveBeenCalled();
   });

@@ -1,143 +1,111 @@
+"""
+Cache storage for Mochi card reviews.
+
+Stores:
+- Cached due cards from Mochi (for faster initial loads)
+- In-progress section reviews for the current card
+"""
+
 import json
-from datetime import datetime, timezone
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Optional
 
 
-class ReviewStorage:
-    """JSON file-based storage for review states."""
+@dataclass
+class SectionReview:
+    """Tracks a single section's review result."""
 
-    def __init__(self, data_dir: str = "review_data"):
-        self.data_dir = Path(data_dir)
-        self.data_dir.mkdir(exist_ok=True)
+    section_index: int
+    remembered: bool
 
-    def _get_user_file(self, user_id: str, deck_id: str) -> Path:
-        """Get the JSON file path for a user's deck."""
-        return self.data_dir / f"{user_id}_{deck_id}.json"
 
-    def _load_user_data(self, user_id: str, deck_id: str) -> Dict:
-        """Load all card states for a user's deck."""
-        file_path = self._get_user_file(user_id, deck_id)
-        if file_path.exists():
-            with open(file_path, "r") as f:
-                return json.load(f)
-        return {"card_states": {}, "review_logs": []}
+@dataclass
+class CardReviewProgress:
+    """Tracks in-progress review for a card with multiple sections."""
 
-    def _save_user_data(self, user_id: str, deck_id: str, data: Dict):
-        """Save all card states for a user's deck."""
-        file_path = self._get_user_file(user_id, deck_id)
-        with open(file_path, "w") as f:
-            json.dump(data, f, indent=2, default=str)
+    card_id: str
+    total_sections: int
+    section_reviews: list[SectionReview]
 
-    def _make_key(self, card_id: str, section_index: int) -> str:
-        """Create a unique key for a card section."""
-        return f"{card_id}_{section_index}"
+    def is_complete(self) -> bool:
+        """Check if all sections have been reviewed."""
+        return len(self.section_reviews) >= self.total_sections
 
-    def get_card_state(
-        self, user_id: str, deck_id: str, card_id: str, section_index: int
-    ) -> Optional[Dict]:
-        """Get current state for a card section."""
-        data = self._load_user_data(user_id, deck_id)
-        key = self._make_key(card_id, section_index)
-        return data["card_states"].get(key)
+    def add_section_review(self, section_index: int, remembered: bool) -> None:
+        """Record a section review result."""
+        # Don't add duplicate reviews for same section
+        if any(r.section_index == section_index for r in self.section_reviews):
+            return
+        self.section_reviews.append(
+            SectionReview(section_index=section_index, remembered=remembered)
+        )
 
-    def create_card_state(
-        self, user_id: str, deck_id: str, card_id: str, section_index: int
-    ) -> Dict:
-        """Initialize a new card state."""
-        now = datetime.now(timezone.utc)
+    def get_aggregate_result(self) -> bool:
+        """Get final result: False if ANY section was forgot, else True."""
+        if not self.section_reviews:
+            return True
+        return all(r.remembered for r in self.section_reviews)
 
-        state = {
-            "user_id": user_id,
-            "deck_id": deck_id,
-            "card_id": card_id,
-            "section_index": section_index,
-            "difficulty": 5.0,
-            "stability": 0.0,
-            "retrievability": 0.0,
-            "state": "new",
-            "due_date": now.isoformat(),
-            "last_review": None,
-            "reps": 0,
-            "lapses": 0,
-            "created_at": now.isoformat(),
-        }
 
-        data = self._load_user_data(user_id, deck_id)
-        key = self._make_key(card_id, section_index)
-        data["card_states"][key] = state
-        self._save_user_data(user_id, deck_id, data)
+class ReviewCache:
+    """Simple cache for Mochi review data."""
 
-        return state
+    def __init__(self, cache_dir: str = "review_cache"):
+        self.cache_dir = Path(cache_dir)
+        self.cache_dir.mkdir(exist_ok=True)
+        self._in_progress: dict[str, CardReviewProgress] = {}
 
-    def update_card_state(
-        self,
-        user_id: str,
-        deck_id: str,
-        card_id: str,
-        section_index: int,
-        new_state: Dict,
-    ):
-        """Update card state after review."""
-        data = self._load_user_data(user_id, deck_id)
-        key = self._make_key(card_id, section_index)
+    def _get_cache_file(self) -> Path:
+        """Get the cache file path."""
+        return self.cache_dir / "due_cards_cache.json"
 
-        # Update the state
-        data["card_states"][key].update(new_state)
-        data["card_states"][key]["updated_at"] = datetime.now(timezone.utc).isoformat()
+    def cache_due_cards(self, cards: list[dict]) -> None:
+        """Cache due cards from Mochi."""
+        cache_file = self._get_cache_file()
+        with open(cache_file, "w") as f:
+            json.dump({"cards": cards}, f, indent=2, default=str)
 
-        self._save_user_data(user_id, deck_id, data)
+    def get_cached_due_cards(self) -> Optional[list[dict]]:
+        """Get cached due cards, if available."""
+        cache_file = self._get_cache_file()
+        if cache_file.exists():
+            with open(cache_file, "r") as f:
+                data = json.load(f)
+                return data.get("cards")
+        return None
 
-    def save_review_log(
-        self, user_id: str, deck_id: str, card_id: str, section_index: int, log: Dict
-    ):
-        """Record a review event."""
-        data = self._load_user_data(user_id, deck_id)
+    def clear_cache(self) -> None:
+        """Clear the due cards cache."""
+        cache_file = self._get_cache_file()
+        if cache_file.exists():
+            cache_file.unlink()
 
-        log_entry = {
-            "user_id": user_id,
-            "deck_id": deck_id,
-            "card_id": card_id,
-            "section_index": section_index,
-            "rating": log["rating"],
-            "review_time": log["review_time"],
-            "scheduled_days": log.get("scheduled_days"),
-            "elapsed_days": log.get("elapsed_days"),
-            "review_state": log.get("review_state"),
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        }
+    def start_card_review(
+        self, card_id: str, total_sections: int
+    ) -> CardReviewProgress:
+        """Start tracking a new card review."""
+        progress = CardReviewProgress(
+            card_id=card_id, total_sections=total_sections, section_reviews=[]
+        )
+        self._in_progress[card_id] = progress
+        return progress
 
-        data["review_logs"].append(log_entry)
-        self._save_user_data(user_id, deck_id, data)
+    def get_card_progress(self, card_id: str) -> Optional[CardReviewProgress]:
+        """Get in-progress review for a card."""
+        return self._in_progress.get(card_id)
 
-    def get_due_cards(self, user_id: str, deck_id: str, limit: int = 50) -> List[Dict]:
-        """Get all cards due for review."""
-        now = datetime.now(timezone.utc)
-        data = self._load_user_data(user_id, deck_id)
+    def record_section_review(
+        self, card_id: str, section_index: int, remembered: bool, total_sections: int
+    ) -> CardReviewProgress:
+        """Record a section review and return updated progress."""
+        progress = self._in_progress.get(card_id)
+        if not progress:
+            progress = self.start_card_review(card_id, total_sections)
 
-        due_cards = []
-        for key, state in data["card_states"].items():
-            due_date = datetime.fromisoformat(state["due_date"])
-            if due_date <= now:
-                due_cards.append(state)
+        progress.add_section_review(section_index, remembered)
+        return progress
 
-        # Sort by due date (oldest first)
-        due_cards.sort(key=lambda x: datetime.fromisoformat(x["due_date"]))
-
-        return due_cards[:limit]
-
-    def reset_reviews_for_today(self, user_id: str, deck_id: str) -> int:
-        """Reset all card states to be due today. Returns number of cards reset."""
-        now = datetime.now(timezone.utc)
-        data = self._load_user_data(user_id, deck_id)
-
-        count = 0
-        for key, state in data["card_states"].items():
-            state["due_date"] = now.isoformat()
-            state["updated_at"] = now.isoformat()
-            count += 1
-
-        if count > 0:
-            self._save_user_data(user_id, deck_id, data)
-
-        return count
+    def complete_card_review(self, card_id: str) -> Optional[CardReviewProgress]:
+        """Mark card review as complete and return final progress."""
+        return self._in_progress.pop(card_id, None)

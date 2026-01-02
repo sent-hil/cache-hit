@@ -1,16 +1,15 @@
 import logging
+import os
+import sys
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-import deck_router
 import execution_router
 import review_router
 from container_manager import LANGUAGE_CONFIG
-from deck_parser import parse_deck_folder
 
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -18,9 +17,21 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def check_mochi_api_key():
+    """Check that MOCHI_API_KEY is set."""
+    if not os.environ.get("MOCHI_API_KEY"):
+        logger.error("MOCHI_API_KEY environment variable is not set")
+        logger.error("Get your API key from: https://app.mochi.cards/settings/api")
+        sys.exit(1)
+    logger.info("MOCHI_API_KEY is configured")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting up FastAPI application")
+
+    # Verify Mochi API key is set
+    check_mochi_api_key()
 
     container_manager = execution_router.get_container_manager()
 
@@ -35,21 +46,6 @@ async def lifespan(app: FastAPI):
     for language in LANGUAGE_CONFIG.keys():
         container_manager.create_container(language)
 
-    logger.info("Loading flashcard decks")
-    data_folder = Path(__file__).parent.parent / "data"
-    deck_cache = deck_router.get_deck_cache()
-    if data_folder.exists():
-        for folder in data_folder.iterdir():
-            if folder.is_dir():
-                try:
-                    deck = parse_deck_folder(str(folder))
-                    deck_cache[deck.id] = deck
-                    logger.info(f"Loaded deck: {deck.name} ({deck.total_cards} cards)")
-                except Exception as e:
-                    logger.error(f"Failed to load deck from {folder.name}: {e}")
-    else:
-        logger.warning(f"Data folder not found: {data_folder}")
-
     logger.info("FastAPI application startup complete")
 
     yield
@@ -60,9 +56,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Code Runner API",
-    description="Execute code in isolated Docker containers",
-    version="0.1.0",
+    title="CacheHit - Mochi Review Client",
+    description="Review flashcards synced with Mochi",
+    version="0.2.0",
     lifespan=lifespan,
 )
 
@@ -77,7 +73,6 @@ app.add_middleware(
 logger.info("FastAPI app created with CORS middleware")
 
 app.include_router(execution_router.router)
-app.include_router(deck_router.router)
 app.include_router(review_router.router)
 
 logger.info("Routers included")

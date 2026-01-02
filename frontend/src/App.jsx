@@ -70,8 +70,11 @@ function App() {
     totalCards,
     totalSections,
     remainingCards,
+    canGoPrevious,
+    canGoNext,
     nextSection,
     nextCard,
+    prevCard,
     removeCurrentCard,
     loading,
     error: reviewError,
@@ -115,6 +118,25 @@ function App() {
     setCode(placeholder);
     clearOutput();
   }, [currentCardIndex, currentLanguage, clearOutput]);
+
+  // Keyboard navigation for cards (left/right arrows)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Don't trigger if user is typing in an input/textarea
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
+        return;
+      }
+
+      if (e.key === "ArrowLeft" && canGoPrevious) {
+        prevCard();
+      } else if (e.key === "ArrowRight" && canGoNext) {
+        nextCard();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [canGoPrevious, canGoNext, prevCard, nextCard]);
 
   const handleRun = (codeOverride) => {
     console.log("Running code with language:", currentLanguage, "deck_id:", currentCard?.deck_id);
@@ -279,9 +301,9 @@ function App() {
 
       <Footer
         onSkipCard={nextCard}
-        onPreviousCard={() => {}}
-        canGoNext={remainingCards > 1}
-        canGoPrevious={false}
+        onPreviousCard={prevCard}
+        canGoNext={canGoNext}
+        canGoPrevious={canGoPrevious}
       />
     </div>
   );

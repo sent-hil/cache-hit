@@ -14,17 +14,26 @@ export const Footer = ({
             </kbd>
             <span>Run</span>
           </div>
+          <div className="flex items-center gap-2">
+            <kbd className="h-5 flex items-center justify-center min-w-[20px] rounded-sm bg-surface-subtle border border-border px-1 font-mono text-content">
+              ← →
+            </kbd>
+            <span>Prev/Next</span>
+          </div>
         </div>
 
         <div className="flex items-center gap-3 ml-auto sm:ml-0 w-full sm:w-auto justify-end">
-          {canGoPrevious && (
-            <button
-              onClick={onPreviousCard}
-              className="px-4 py-2 text-xs font-bold text-content-muted hover:text-content border border-transparent hover:border-border transition-colors uppercase tracking-wider"
-            >
-              Previous Card
-            </button>
-          )}
+          <button
+            onClick={onPreviousCard}
+            disabled={!canGoPrevious}
+            className={`px-4 py-2 text-xs font-bold border border-transparent transition-colors uppercase tracking-wider ${
+              canGoPrevious
+                ? "text-content-muted hover:text-content hover:border-border"
+                : "text-content-muted opacity-50 cursor-not-allowed"
+            }`}
+          >
+            ← Prev
+          </button>
           <button
             onClick={onSkipCard}
             disabled={!canGoNext}
@@ -34,7 +43,7 @@ export const Footer = ({
                 : "text-content-muted opacity-50 cursor-not-allowed"
             }`}
           >
-            Next Card
+            Next →
           </button>
         </div>
       </div>

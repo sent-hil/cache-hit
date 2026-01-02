@@ -61,6 +61,15 @@ export const useReviewState = () => {
     return false;
   }, [currentCardIndex, cards.length]);
 
+  const prevCard = useCallback(() => {
+    if (currentCardIndex > 0) {
+      setCurrentCardIndex((prev) => prev - 1);
+      setCurrentSectionIndex(0);
+      return true;
+    }
+    return false;
+  }, [currentCardIndex]);
+
   const removeCurrentCard = useCallback(() => {
     setCards((prev) => {
       const newCards = [...prev];
@@ -90,10 +99,13 @@ export const useReviewState = () => {
     totalCards,
     totalSections,
     remainingCards: cards.length,
+    canGoPrevious: currentCardIndex > 0,
+    canGoNext: currentCardIndex < cards.length - 1,
 
     // Navigation
     nextSection,
     nextCard,
+    prevCard,
     removeCurrentCard,
 
     // Loading state

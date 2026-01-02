@@ -9,7 +9,7 @@ import pytest
 
 from mochi_client import Card, Section
 from review_storage import SYNC_INTERVAL_MINUTES, ReviewCache
-from sync_manager import SyncManager
+from sync import SyncManager
 
 
 @pytest.fixture

@@ -52,7 +52,7 @@ async def lifespan(app: FastAPI):
 
     # Start background sync manager
     from review_router import card_to_dict, get_mochi_client, get_review_cache
-    from sync_manager import SyncManager
+    from sync import SyncManager
 
     sync_manager = SyncManager(
         mochi_client=get_mochi_client(),

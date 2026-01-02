@@ -50,11 +50,23 @@ async def lifespan(app: FastAPI):
     for language in LANGUAGE_CONFIG.keys():
         container_manager.create_container(language)
 
+    # Start background sync manager
+    from review_router import card_to_dict, get_mochi_client, get_review_cache
+    from sync_manager import SyncManager
+
+    sync_manager = SyncManager(
+        mochi_client=get_mochi_client(),
+        review_cache=get_review_cache(),
+        card_to_dict=card_to_dict,
+    )
+    sync_manager.start()
+
     logger.info("FastAPI application startup complete")
 
     yield
 
     logger.info("Shutting down FastAPI application")
+    await sync_manager.stop()
     container_manager.cleanup_all()
     logger.info("FastAPI application shutdown complete")
 

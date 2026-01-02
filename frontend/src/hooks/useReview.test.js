@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, act, waitFor } from "@testing-library/react";
+import { renderHook, act, waitFor } from "@testing-library/preact";
 import { useReview } from "./useReview";
 
 global.fetch = vi.fn();

@@ -4,35 +4,29 @@ import { useReview } from "../hooks/useReview";
 import katex from "katex";
 import "katex/dist/katex.min.css";
 
-const renderMedia = (text, cardId) => {
+const renderMedia = (text) => {
   // Handle markdown image syntax with @media references: ![alt](@media/filename.png)
-  // Link to Mochi card view - user will need to be logged in
-  const mochiUrl = cardId ? `https://app.mochi.cards/app#/cards/${cardId}` : null;
-
+  // Mochi API doesn't expose image fetching, so show placeholder
   return text.replace(
     /!\[([^\]]*)\]\(@media\/([^)]+)\)/g,
     (match, alt, filename) => {
-      const linkStart = mochiUrl ? `<a href="${mochiUrl}" target="_blank" rel="noopener noreferrer" class="no-underline">` : '';
-      const linkEnd = mochiUrl ? '</a>' : '';
-
-      return `${linkStart}<div class="inline-flex items-center gap-3 px-4 py-3 bg-surface-panel border border-dashed border-accent/50 rounded text-content hover:border-accent hover:bg-accent/5 transition-colors cursor-pointer">
-        <span class="material-symbols-outlined text-[24px] text-accent">image</span>
+      return `<div class="inline-flex items-center gap-3 px-4 py-3 bg-surface-panel border border-dashed border-border rounded text-content-muted">
+        <span class="material-symbols-outlined text-[24px]">image</span>
         <div class="flex flex-col">
-          <span class="text-sm font-medium">${alt || 'Image'}</span>
-          <span class="text-[10px] text-content-muted">${filename} · Click to view in Mochi</span>
+          <span class="text-sm">${alt || 'Image'}</span>
+          <span class="text-[10px] opacity-60">${filename} · Can't render images</span>
         </div>
-        <span class="material-symbols-outlined text-[16px] text-content-muted ml-auto">open_in_new</span>
-      </div>${linkEnd}`;
+      </div>`;
     }
   );
 };
 
-const renderLatex = (text, cardId = null) => {
+const renderLatex = (text) => {
   try {
     let result = text;
 
     // First handle @media image references
-    result = renderMedia(result, cardId);
+    result = renderMedia(result);
 
     // Handle display mode $$...$$
     result = result.replace(/\$\$([^\$]+)\$\$/g, (match, latex) => {
@@ -271,8 +265,7 @@ export const QuestionPane = ({
                             __html: renderLatex(
                               index === 0
                                 ? card.name || section.question?.split("\n")[0] || ""
-                                : section.question?.split("\n")[0] || "",
-                              card.id
+                                : section.question?.split("\n")[0] || ""
                             ),
                           }}
                         />
@@ -309,10 +302,7 @@ export const QuestionPane = ({
                       </div>
                     )}
 
-                    {isActive &&
-                      !isProgrammingCard &&
-                      showAnswer &&
-                      section.answer && (
+                    {isActive && showAnswer && section.answer && (
                         <div className="flex flex-col gap-3 mt-6">
                           <div className="flex justify-between items-baseline border-b border-border pb-1 mb-1">
                             <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">
@@ -323,7 +313,7 @@ export const QuestionPane = ({
                             <div
                               className="text-lg text-content leading-relaxed font-sans whitespace-pre-wrap"
                               dangerouslySetInnerHTML={{
-                                __html: renderLatex(section.answer, card.id),
+                                __html: renderLatex(section.answer),
                               }}
                             />
                           </div>

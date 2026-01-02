@@ -89,13 +89,8 @@ function App() {
     // In a more complex implementation, we'd track this in useReviewState
   };
 
-  const {
-    showAnswer,
-    activeTab,
-    handleShowAnswer,
-    handleHideAnswer,
-    handleTabChange,
-  } = useAnswerVisibility(currentCardIndex, currentSectionIndex);
+  const { showAnswer, handleShowAnswer, handleHideAnswer } =
+    useAnswerVisibility(currentCardIndex, currentSectionIndex);
 
   useEffect(() => {
     if (backendAvailable && queuedCode) {
@@ -146,8 +141,6 @@ function App() {
   const handleCodeChange = (value) => {
     setCode(value || "");
   };
-
-  const answerCode = currentSection?.answer || "";
 
   // Determine if current card is a programming card (based on deck_id)
   const isProgrammingCard =
@@ -270,10 +263,6 @@ function App() {
                 backendError={backendError}
                 onClearOutput={clearOutput}
                 onReconnect={checkHealth}
-                activeTab={activeTab}
-                onTabChange={handleTabChange}
-                showAnswer={showAnswer}
-                answerCode={answerCode}
                 language={currentLanguage}
               />,
             ]}

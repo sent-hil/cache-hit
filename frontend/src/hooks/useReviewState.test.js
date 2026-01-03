@@ -28,9 +28,13 @@ const mockCards = [
   },
 ];
 
+const CARD_INDEX_KEY = "cacheHit.currentCardIndex";
+const SECTION_INDEX_KEY = "cacheHit.currentSectionIndex";
+
 describe("useReviewState", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
   });
 
   it("should initialize with loading state", () => {
@@ -377,5 +381,150 @@ describe("useReviewState", () => {
 
     expect(result.current.isEmpty).toBe(true);
     expect(result.current.currentCard).toBe(null);
+  });
+
+  describe("localStorage persistence", () => {
+    it("should restore card position from localStorage on initial load", async () => {
+      localStorage.setItem(CARD_INDEX_KEY, "1");
+      localStorage.setItem(SECTION_INDEX_KEY, "0");
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ cards: mockCards }),
+      });
+
+      const { result } = renderHook(() => useReviewState());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.currentCard.id).toBe("card2");
+      expect(result.current.currentSectionIndex).toBe(0);
+    });
+
+    it("should restore section position from localStorage on initial load", async () => {
+      localStorage.setItem(CARD_INDEX_KEY, "0");
+      localStorage.setItem(SECTION_INDEX_KEY, "1");
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ cards: mockCards }),
+      });
+
+      const { result } = renderHook(() => useReviewState());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.currentCard.id).toBe("card1");
+      expect(result.current.currentSectionIndex).toBe(1);
+      expect(result.current.currentSection.question).toBe("Q2");
+    });
+
+    it("should save card position to localStorage when navigating", async () => {
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ cards: mockCards }),
+      });
+
+      const { result } = renderHook(() => useReviewState());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      act(() => {
+        result.current.nextCard();
+      });
+
+      await waitFor(() => {
+        expect(localStorage.getItem(CARD_INDEX_KEY)).toBe("1");
+      });
+    });
+
+    it("should save section position to localStorage when navigating sections", async () => {
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ cards: mockCards }),
+      });
+
+      const { result } = renderHook(() => useReviewState());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      act(() => {
+        result.current.nextSection();
+      });
+
+      await waitFor(() => {
+        expect(localStorage.getItem(SECTION_INDEX_KEY)).toBe("1");
+      });
+    });
+
+    it("should handle saved index greater than cards length", async () => {
+      localStorage.setItem(CARD_INDEX_KEY, "10");
+      localStorage.setItem(SECTION_INDEX_KEY, "0");
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ cards: mockCards }),
+      });
+
+      const { result } = renderHook(() => useReviewState());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.currentCard.id).toBe("card3");
+    });
+
+    it("should handle missing localStorage values", async () => {
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ cards: mockCards }),
+      });
+
+      const { result } = renderHook(() => useReviewState());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.currentCard.id).toBe("card1");
+      expect(result.current.currentSectionIndex).toBe(0);
+    });
+
+    it("should not restore position when reload is called (not initial load)", async () => {
+      localStorage.setItem(CARD_INDEX_KEY, "2");
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ cards: mockCards }),
+      });
+
+      const { result } = renderHook(() => useReviewState());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.currentCard.id).toBe("card3");
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ cards: mockCards }),
+      });
+
+      await act(async () => {
+        await result.current.reload();
+      });
+
+      expect(result.current.currentCard.id).toBe("card1");
+    });
   });
 });

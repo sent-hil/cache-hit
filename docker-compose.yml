@@ -1,0 +1,33 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    privileged: true
+    volumes:
+      - ./backend:/app
+      - /run/user/501/podman/podman.sock:/var/run/docker.sock
+    security_opt:
+      - label:disable
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MOCHI_API_KEY=${MOCHI_API_KEY:-}
+    command: uv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:8000
+      - BROWSER=none
+    depends_on:
+      - backend
+    command: npm run dev -- --host 0.0.0.0 --port 5173

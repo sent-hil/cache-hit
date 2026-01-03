@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { api } from "../utils/api";
 
+const CARD_INDEX_KEY = "cacheHit.currentCardIndex";
+const SECTION_INDEX_KEY = "cacheHit.currentSectionIndex";
+
 export const useReviewState = () => {
   const [cards, setCards] = useState([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -9,6 +12,7 @@ export const useReviewState = () => {
   const [error, setError] = useState(null);
   const [initialTotalCards, setInitialTotalCards] = useState(0);
   const initialTotalCardsRef = useRef(0);
+  const isRestoringFromStorage = useRef(false);
 
   const loadDueCards = useCallback(async (isInitialLoad = false) => {
     setLoading(true);
@@ -18,12 +22,27 @@ export const useReviewState = () => {
       const dueCards = response.cards || [];
 
       setCards(dueCards);
-      setCurrentCardIndex(0);
-      setCurrentSectionIndex(0);
 
       if (isInitialLoad) {
+        isRestoringFromStorage.current = true;
+        const savedCardIndex = localStorage.getItem(CARD_INDEX_KEY);
+        const savedSectionIndex = localStorage.getItem(SECTION_INDEX_KEY);
+
+        const restoredCardIndex = savedCardIndex !== null ? parseInt(savedCardIndex, 10) : 0;
+        const restoredSectionIndex = savedSectionIndex !== null ? parseInt(savedSectionIndex, 10) : 0;
+
+        const validCardIndex = Math.min(restoredCardIndex, Math.max(0, dueCards.length - 1));
+        const validSectionIndex = Math.max(0, restoredSectionIndex);
+
+        setCurrentCardIndex(validCardIndex);
+        setCurrentSectionIndex(validSectionIndex);
+        isRestoringFromStorage.current = false;
+
         initialTotalCardsRef.current = dueCards.length;
         setInitialTotalCards(dueCards.length);
+      } else {
+        setCurrentCardIndex(0);
+        setCurrentSectionIndex(0);
       }
     } catch (err) {
       console.error("Failed to load due cards:", err);
@@ -37,6 +56,18 @@ export const useReviewState = () => {
     initialTotalCardsRef.current = 0;
     loadDueCards(true);
   }, [loadDueCards]);
+
+  useEffect(() => {
+    if (!isRestoringFromStorage.current && cards.length > 0) {
+      localStorage.setItem(CARD_INDEX_KEY, currentCardIndex.toString());
+    }
+  }, [currentCardIndex, cards.length]);
+
+  useEffect(() => {
+    if (!isRestoringFromStorage.current && cards.length > 0) {
+      localStorage.setItem(SECTION_INDEX_KEY, currentSectionIndex.toString());
+    }
+  }, [currentSectionIndex, cards.length]);
 
   const currentCard = cards[currentCardIndex] || null;
   const currentSection = currentCard?.sections?.[currentSectionIndex] || null;

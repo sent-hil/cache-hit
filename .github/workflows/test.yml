@@ -23,17 +23,22 @@ jobs:
       with:
         version: "latest"
 
+    - name: Verify Docker is running
+      run: |
+        docker --version
+        docker info
+
+    - name: Pull required Docker images
+      run: |
+        docker pull python:3.10-slim
+        docker pull ruby:3.2-slim
+
     - name: Install dependencies
       working-directory: ./backend
       run: |
         uv sync --dev
 
-    - name: Run tests
-      working-directory: ./backend
-      run: |
-        uv run pytest tests/ -v
-
     - name: Run tests with coverage
       working-directory: ./backend
       run: |
-        uv run pytest tests/ --cov=. --cov-report=term-missing
+        uv run pytest tests/ -v --cov=. --cov-report=term-missing

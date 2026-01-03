@@ -28,9 +28,15 @@ jobs:
         docker --version
         docker info
 
-    - name: Pull required Docker images
+    - name: Build and pull required Docker images
       run: |
-        docker pull python-numpy:3.10-alpine
+        # Pull base Python image
+        docker pull python:3.10-alpine
+
+        # Tag it as python-numpy (numpy not actually used, but code expects this image name)
+        docker tag python:3.10-alpine python-numpy:3.10-alpine
+
+        # Pull Ruby image
         docker pull ruby:3.2-alpine
 
     - name: Install dependencies

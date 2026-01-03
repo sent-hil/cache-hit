@@ -1,0 +1,17 @@
+{
+  "name": "CacheHit Dev Container",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "dev",
+  "workspaceFolder": "/workspace",
+
+  "forwardPorts": [8000, 5173],
+
+  "mounts": [
+    "source=${localEnv:HOME}/.config/nvim,target=/root/.config/nvim,type=bind,readonly",
+    "source=${localEnv:HOME}/.config/fish,target=/root/.config/fish,type=bind,readonly"
+  ],
+
+  "postCreateCommand": "cd /workspace/backend && uv sync && cd /workspace/frontend && npm install",
+
+  "remoteUser": "root"
+}

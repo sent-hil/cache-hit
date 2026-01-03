@@ -30,8 +30,8 @@ jobs:
 
     - name: Pull required Docker images
       run: |
-        docker pull python:3.10-slim
-        docker pull ruby:3.2-slim
+        docker pull python-numpy:3.10-alpine
+        docker pull ruby:3.2-alpine
 
     - name: Install dependencies
       working-directory: ./backend

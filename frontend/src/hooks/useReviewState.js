@@ -83,6 +83,15 @@ export const useReviewState = () => {
     return false;
   }, [currentCard, currentSectionIndex, totalSections]);
 
+  const goToSection = useCallback((index) => {
+    if (!currentCard) return false;
+    if (index >= 0 && index < totalSections) {
+      setCurrentSectionIndex(index);
+      return true;
+    }
+    return false;
+  }, [currentCard, totalSections]);
+
   const nextCard = useCallback(() => {
     if (currentCardIndex < cards.length - 1) {
       setCurrentCardIndex((prev) => prev + 1);
@@ -135,6 +144,7 @@ export const useReviewState = () => {
 
     // Navigation
     nextSection,
+    goToSection,
     nextCard,
     prevCard,
     removeCurrentCard,

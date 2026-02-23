@@ -73,6 +73,7 @@ function App() {
     canGoPrevious,
     canGoNext,
     nextSection,
+    goToSection,
     nextCard,
     prevCard,
     removeCurrentCard,
@@ -83,11 +84,6 @@ function App() {
   } = useReviewState();
 
   const canGoNextSection = currentSectionIndex < totalSections - 1;
-
-  const goToSection = (index) => {
-    // For now, just reload to reset section index
-    // In a more complex implementation, we'd track this in useReviewState
-  };
 
   const { showAnswer, handleShowAnswer, handleHideAnswer } =
     useAnswerVisibility(currentCardIndex, currentSectionIndex);

@@ -221,6 +221,16 @@ function App() {
             </div>
           </div>
           <div className="h-4 w-px bg-border mx-2"></div>
+          <button
+            onClick={() => reload()}
+            disabled={loading}
+            className="flex items-center gap-1 px-2 py-1 text-content-muted hover:text-white hover:bg-surface-panel transition-colors disabled:opacity-50"
+            title="Refresh cards from Mochi"
+          >
+            <span className={`material-symbols-outlined text-[18px] ${loading ? 'animate-spin' : ''}`}>
+              refresh
+            </span>
+          </button>
         </div>
       </header>
 

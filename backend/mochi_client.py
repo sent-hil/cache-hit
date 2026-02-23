@@ -105,11 +105,70 @@ class MochiClient:
             "Accept": "application/transit+json",
         }
 
+    def _get_all_decks(self) -> list[dict]:
+        """Fetch all decks with pagination."""
+        all_decks = []
+        bookmark = None
+
+        while True:
+            params = {"limit": 100}
+            if bookmark:
+                params["bookmark"] = bookmark
+
+            response = requests.get(
+                f"{self.BASE_URL}/decks",
+                auth=self._auth(),
+                headers=self._json_headers(),
+                params=params,
+            )
+            response.raise_for_status()
+
+            data = response.json()
+            decks = data.get("docs", [])
+            all_decks.extend(decks)
+
+            bookmark = data.get("bookmark")
+            if not decks or not bookmark:
+                break
+
+        return all_decks
+
+    def _get_all_cards(self) -> list[dict]:
+        """Fetch all cards with pagination."""
+        all_cards = []
+        bookmark = None
+
+        while True:
+            params = {"limit": 100}
+            if bookmark:
+                params["bookmark"] = bookmark
+
+            response = requests.get(
+                f"{self.BASE_URL}/cards",
+                auth=self._auth(),
+                headers=self._json_headers(),
+                params=params,
+            )
+            response.raise_for_status()
+
+            data = response.json()
+            cards = data.get("docs", [])
+            all_cards.extend(cards)
+
+            bookmark = data.get("bookmark")
+            if not cards or not bookmark:
+                break
+
+        return all_cards
+
     def get_due_cards(
         self, deck_id: Optional[str] = None, date: Optional[datetime] = None
     ) -> list[Card]:
         """
         Fetch cards that are due for review.
+
+        Fetches all cards and filters locally to work around the Mochi API's
+        /due endpoint limitation (only returns ~15 cards).
 
         Args:
             deck_id: Optional deck ID to filter by. If None, returns due cards from all decks.
@@ -118,24 +177,49 @@ class MochiClient:
         Returns:
             List of Card objects that are due for review.
         """
+        target_date = date or datetime.now(timezone.utc)
+        today_str = target_date.strftime("%Y-%m-%d")
+
+        # Get active (non-archived) deck IDs
+        all_decks = self._get_all_decks()
+        active_deck_ids = {d["id"] for d in all_decks if not d.get("archived?")}
+
+        # If specific deck requested, only include that one
         if deck_id:
-            url = f"{self.BASE_URL}/due/{deck_id}"
-        else:
-            url = f"{self.BASE_URL}/due"
+            active_deck_ids = {deck_id} & active_deck_ids
 
-        params = {}
-        if date:
-            params["date"] = date.isoformat()
+        # Get all cards
+        all_cards = self._get_all_cards()
 
-        response = requests.get(
-            url, auth=self._auth(), headers=self._json_headers(), params=params
-        )
-        response.raise_for_status()
+        due_cards = []
+        for card_data in all_cards:
+            card_deck_id = card_data.get("deck-id")
 
-        data = response.json()
-        cards_data = data.get("cards", [])
+            # Skip cards in archived or non-matching decks
+            if card_deck_id not in active_deck_ids:
+                continue
 
-        return [Card.from_api_response(card) for card in cards_data]
+            # Skip archived cards
+            if card_data.get("archived?"):
+                continue
+
+            # Check if card is due
+            reviews = card_data.get("reviews", [])
+            if not reviews:
+                # New card - include it
+                if card_data.get("new?", False):
+                    due_cards.append(Card.from_api_response(card_data))
+                continue
+
+            # Check due date from last review
+            last_review = reviews[-1]
+            due_date = last_review.get("due", {})
+            if isinstance(due_date, dict):
+                due_str = due_date.get("date", "")
+                if due_str and due_str[:10] <= today_str:
+                    due_cards.append(Card.from_api_response(card_data))
+
+        return due_cards
 
     def update_card_review(self, card_id: str, remembered: bool) -> dict:
         """

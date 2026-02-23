@@ -1,8 +1,24 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { RatingButtonsEnhanced } from "./RatingButtonsEnhanced";
 import { useReview } from "../hooks/useReview";
 import katex from "katex";
 import "katex/dist/katex.min.css";
+
+// Helper to reveal the next hidden cloze in the document
+// Returns true if a cloze was revealed, false if none remaining
+export const revealNextCloze = () => {
+  const hiddenClozes = document.querySelectorAll('.cloze-hidden[data-revealed="false"]');
+  if (hiddenClozes.length > 0) {
+    hiddenClozes[0].dataset.revealed = "true";
+    return true;
+  }
+  return false;
+};
+
+// Check if there are any unrevealed clozes
+export const hasUnrevealedClozes = () => {
+  return document.querySelectorAll('.cloze-hidden[data-revealed="false"]').length > 0;
+};
 
 // Handle Mochi cloze deletions: {{hidden text}} -> clickable hidden span
 export const renderCloze = (text) => {
@@ -162,6 +178,33 @@ export const QuestionPane = ({
     window.addEventListener("keypress", handleKeyPress);
     return () => window.removeEventListener("keypress", handleKeyPress);
   }, [showAnswer, card, currentSectionIndex]);
+
+  // Handle spacebar: reveal next cloze or show answer
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Don't trigger if user is typing in an input/textarea
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
+        return;
+      }
+
+      if (e.code === "Space") {
+        e.preventDefault(); // Prevent page scroll
+        
+        // Try to reveal the next cloze
+        if (revealNextCloze()) {
+          return; // Cloze was revealed, done
+        }
+        
+        // No more clozes, show answer if not already shown
+        if (!showAnswer) {
+          onShowAnswer();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showAnswer, onShowAnswer]);
 
   // Propagate sync errors to parent
   useEffect(() => {

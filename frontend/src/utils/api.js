@@ -1,6 +1,5 @@
-// Use relative URLs in production (served from same origin via FastAPI)
-// Use absolute URLs in development (different port)
-const API_URL = import.meta.env.DEV ? "http://localhost:8000" : "";
+// Use VITE_API_URL if set, otherwise use relative URLs (same origin)
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 export const api = {
   async checkHealth() {

@@ -38,8 +38,8 @@ const renderLatex = (text) => {
     // First handle @media image references
     result = renderMedia(result);
 
-    // Handle display mode $$...$$
-    result = result.replace(/\$\$([^\$]+)\$\$/g, (match, latex) => {
+    // Handle display mode $$...$$ (non-greedy, multiline)
+    result = result.replace(/\$\$([\s\S]+?)\$\$/g, (match, latex) => {
       try {
         return katex.renderToString(latex.trim(), {
           displayMode: true,
@@ -50,8 +50,8 @@ const renderLatex = (text) => {
       }
     });
 
-    // Then handle inline mode $...$
-    result = result.replace(/\$([^\$]+)\$/g, (match, latex) => {
+    // Then handle inline mode $...$ (non-greedy, multiline)
+    result = result.replace(/\$([\s\S]+?)\$/g, (match, latex) => {
       try {
         return katex.renderToString(latex.trim(), {
           displayMode: false,
@@ -289,47 +289,63 @@ export const QuestionPane = ({
                   </div>
 
                   <div className="flex flex-col gap-6 flex-1 min-w-0">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h1
-                          className={`text-2xl font-bold tracking-tight font-mono ${
-                            isActive
-                              ? "text-white"
-                              : "text-content-muted group-hover:text-white transition-colors cursor-pointer"
-                          }`}
-                          onClick={() => !isActive && onGoToSection(index)}
-                          dangerouslySetInnerHTML={{
-                            __html: renderLatex(
-                              index === 0
-                                ? card.name || section.question?.split("\n")[0] || ""
-                                : section.question?.split("\n")[0] || ""
-                            ),
-                          }}
-                        />
-                        {isActive && (
-                          <div className="flex items-center gap-2 mt-2">
-                            <span className="flex size-2 relative">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                            </span>
-                            <span className="text-[10px] text-primary uppercase tracking-wider font-bold">
-                              Active Question
-                            </span>
+                    {(() => {
+                      // Check if question starts with $$ (LaTeX block) - don't split it
+                      const questionText = section.question || "";
+                      const startsWithLatex = questionText.trim().startsWith("$$");
+                      const firstLine = questionText.split("\n")[0] || "";
+                      const restOfQuestion = questionText.split("\n").slice(1).join("\n").trim();
+                      
+                      // For title: use card name for first section, or first line if not a LaTeX block
+                      const titleText = index === 0 
+                        ? (card.name && card.name !== "$$" ? card.name : (startsWithLatex ? "" : firstLine))
+                        : (startsWithLatex ? "" : firstLine);
+                      
+                      // For body: use full question if starts with LaTeX, otherwise rest of lines
+                      const bodyText = startsWithLatex ? questionText : restOfQuestion;
+                      
+                      return (
+                        <>
+                          <div className="flex items-start justify-between">
+                            <div>
+                              {titleText && (
+                                <h1
+                                  className={`text-2xl font-bold tracking-tight font-mono ${
+                                    isActive
+                                      ? "text-white"
+                                      : "text-content-muted group-hover:text-white transition-colors cursor-pointer"
+                                  }`}
+                                  onClick={() => !isActive && onGoToSection(index)}
+                                  dangerouslySetInnerHTML={{
+                                    __html: renderLatex(titleText),
+                                  }}
+                                />
+                              )}
+                              {isActive && (
+                                <div className="flex items-center gap-2 mt-2">
+                                  <span className="flex size-2 relative">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                                  </span>
+                                  <span className="text-[10px] text-primary uppercase tracking-wider font-bold">
+                                    Active Question
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    </div>
 
-                    {isActive && section.question?.split("\n").slice(1).join("\n").trim() && (
-                      <div
-                        className="text-lg text-content leading-relaxed"
-                        dangerouslySetInnerHTML={{
-                          __html: renderContent(
-                            section.question.split("\n").slice(1).join("\n")
-                          ),
-                        }}
-                      />
-                    )}
+                          {isActive && bodyText && (
+                            <div
+                              className="text-lg text-content leading-relaxed"
+                              dangerouslySetInnerHTML={{
+                                __html: renderContent(bodyText),
+                              }}
+                            />
+                          )}
+                        </>
+                      );
+                    })()}
 
                     {isActive && showAnswer && section.answer && (
                         <div className="flex flex-col gap-3 mt-6">

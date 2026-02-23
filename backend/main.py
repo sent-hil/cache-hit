@@ -80,7 +80,11 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,  # type: ignore
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://frontend.cache-hit.orb.local",
+        "https://frontend.cache-hit.orb.local",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

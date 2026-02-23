@@ -15,6 +15,7 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
+    allowedHosts: [".orb.local"],
   },
   build: {
     outDir: "dist",
